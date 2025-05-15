@@ -1,4 +1,5 @@
 import os
+from tqdm import tqdm
 import soundfile as sf
 import math
 from collections import Counter
@@ -46,3 +47,13 @@ def compute_counts(participant_id):
             prediction = identify_language_speechbrain(sample)
             counter[prediction[3][0]] += 1
     return counter
+
+if __name__ == '__main__':
+    participants = ['VF20B', 'VF19B', 'VF21B', 'VF21D', 'VM21E', 'VM34A', 'VF19C', 'VF19A', 'VM20B'] # NOTE: don't forget that VF19A and VM20B is English-dominant, the other ones are not
+    participant_to_percentages = {}
+    all_counters = []
+    for participant in tqdm(participants):
+        counter = compute_counts(participant)
+        pct_english = counter['en: English'] / sum(counter.values())
+        participant_to_percentages[participant] = pct_english
+    print(participant_to_percentages)
