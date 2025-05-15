@@ -13,7 +13,7 @@ SCRATCH_DIR = dotenv_values(".env")["SCRATCH_SAVE_DIR"]
 DATASET_DIR = dotenv_values(".env")["DATASET_DIR"]
 HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
 
-SPICE_DIRNAME = f"{SCRATCH_DIR}/spice"
+SPICE_DIRNAME = f"{HF_CACHE_DIR}/spice"
 SPICE_TMP_DIRNAME = f"{SCRATCH_DIR}/spice_temp"
 TARGET_SAMPLING_RATE= 16000
 
