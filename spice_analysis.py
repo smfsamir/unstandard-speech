@@ -25,7 +25,7 @@ language_id = EncoderClassifier.from_hparams(source="speechbrain/lang-id-voxling
 def compute_counts(participant_id):
     participant_files = list(filter(lambda x: participant_id in x, os.listdir(SPICE_DIRNAME)))
     assert len(participant_files) == 2
-    tg = textgrid.openTextgrid(f"{SCRATCH_DIR}/spice/{participant_files[0]}", False)
+    tg = textgrid.openTextgrid(f"{SPICE_DIRNAME}/{participant_files[0]}", False)
     entries = tg.getTier('utterance').entries
     data, _ = librosa.load(f"{SPICE_DIRNAME}/{participant_files[1]}", sr=TARGET_SAMPLING_RATE)
     counter = Counter()
