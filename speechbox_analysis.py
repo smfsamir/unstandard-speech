@@ -40,7 +40,7 @@ def process_dhr(identify_language_fn):
         identifiers = set([Path(dir_fname).stem for dir_fname in os.listdir(speechbox_subdir)])
         for identifier in identifiers:
             tg = textgrid.openTextgrid(f"{speechbox_subdir}/{identifier}.TextGrid", False)
-            entries = tg.getTier('utterance').entries
+            entries = tg.getTier('utt').entries
             data, _ = librosa.load(f"{speechbox_subdir}/{identifier}", sr=TARGET_SAMPLING_RATE, dtype=np.float64)
             for i in range(len(entries)):
                 first_interval_start, first_interval_end = entries[i].start, entries[i].end
