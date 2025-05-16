@@ -6,6 +6,7 @@ from collections import Counter
 import librosa
 from praatio import textgrid 
 from dotenv import dotenv_values
+from functools import partial
 from speechbrain.inference.classifiers import EncoderClassifier
 from packages.lang_identify import identify_language_speechbrain
 
@@ -29,6 +30,7 @@ def compute_counts(participant_id):
     entries = tg.getTier('utterance').entries
     data, _ = librosa.load(f"{SPICE_DIRNAME}/{participant_files[0]}", sr=TARGET_SAMPLING_RATE)
     counter = Counter()
+    identify_language = partial(identify_language_speechbrain, language_id)
     for i in range(len(entries)):
         first_interval_start, first_interval_end = entries[i].start, entries[i].end
         label = entries[i].label
@@ -41,7 +43,7 @@ def compute_counts(participant_id):
                     "sampling_rate": TARGET_SAMPLING_RATE
                 }
             }
-            prediction = identify_language_speechbrain(sample)
+            prediction = identify_language(sample)
             counter[prediction[3][0]] += 1
     return counter
 
