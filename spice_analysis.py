@@ -35,12 +35,9 @@ def compute_counts(participant_id):
         slice = data[math.floor(first_interval_start * TARGET_SAMPLING_RATE): math.ceil(first_interval_end * TARGET_SAMPLING_RATE)]
         # print(samplerate)
         if len(label.split(' ')) > 2:
-            fname = f"spice_{participant_id}_{i}.wav"
-            sf.write(f'{SPICE_TMP_DIRNAME}/{fname}', slice, samplerate=TARGET_SAMPLING_RATE)
-            signal = language_id.load_audio(f"{SPICE_TMP_DIRNAME}/{fname}")
             sample = {
                 "audio": {
-                    "array": signal,
+                    "array": slice,
                     "sampling_rate": TARGET_SAMPLING_RATE
                 }
             }
