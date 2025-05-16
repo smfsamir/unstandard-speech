@@ -66,8 +66,8 @@ def main(lang_id_model):
             device=DEVICE,
             nbest=3  # return nbest prediction and probability
         )
-        identify_language_owsm = partial(owsm_detect_language_from_array, s2l)
-        identify_language_owsm = lambda sample_dict: owsm_detect_language_from_array(sample_dict['audio']['array'])
+        identify_language_owsm_partial = partial(owsm_detect_language_from_array, s2l)
+        identify_language_owsm = lambda sample_dict: identify_language_owsm_partial(sample_dict['audio']['array'])
         identify_language = identify_language_owsm
     participants = ['VF20B', 'VF19B', 'VF21B', 'VF21D', 'VM21E', 'VM34A', 'VF19C', 'VF19A', 'VM20B'] # NOTE: don't forget that VF19A and VM20B is English-dominant, the other ones are not
     participant_to_percentages = {}
