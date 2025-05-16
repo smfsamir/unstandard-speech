@@ -43,8 +43,8 @@ def compute_counts(participant_id):
                     "sampling_rate": TARGET_SAMPLING_RATE
                 }
             }
-            prediction = identify_language(sample)
-            counter[prediction[3][0]] += 1
+            prediction = identify_language(sample)['language_prediction']
+            counter[prediction] += 1
     return counter
 
 if __name__ == '__main__':
