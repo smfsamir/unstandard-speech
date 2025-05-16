@@ -55,7 +55,7 @@ def compute_counts(identify_languge_fn, participant_id):
     return counter
 
 @click.command()
-@click.option('lang_id_model', type=click.Choice(['speechbrain', 'owsm']))
+@click.argument('lang_id_model', type=click.Choice(['speechbrain', 'owsm']))
 def main(lang_id_model):
     if lang_id_model == 'speechbrain':
         speechbrain_language_id = EncoderClassifier.from_hparams(source="speechbrain/lang-id-voxlingua107-ecapa", savedir=SCRATCH_DIR)
