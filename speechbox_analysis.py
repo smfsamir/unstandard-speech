@@ -52,12 +52,12 @@ def process_dhr(identify_language_fn):
                         "sampling_rate": TARGET_SAMPLING_RATE
                     }
                 }
-            prediction = identify_language_fn(sample)['language_prediction']
-            predictions.append(prediction)
-            genders.append(identifier.split("_")[2])
-            backgrounds.append(identifier.split("_")[3])
-            timestamps.append(f"{_get_timestamp(first_interval_start)}-{_get_timestamp(first_interval_end)}")
-            break
+                prediction = identify_language_fn(sample)['language_prediction']
+                predictions.append(prediction)
+                genders.append(identifier.split("_")[2])
+                backgrounds.append(identifier.split("_")[3])
+                timestamps.append(f"{_get_timestamp(first_interval_start)}-{_get_timestamp(first_interval_end)}")
+                break
     frame = pl.DataFrame({
         "timestamp": timestamps,
         "gender": genders, 
