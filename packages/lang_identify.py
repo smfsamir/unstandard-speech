@@ -3,7 +3,7 @@ import librosa
 import torch
 
 
-def identify_language_speechbrain(sample):
+def identify_language_speechbrain(language_id_model, sample):
     audio = sample["audio"]
     wav_array = audio["array"]
     sample_rate = audio["sampling_rate"]
