@@ -75,3 +75,6 @@ def main(lang_id_model):
         pct_english = counter['en: English'] / sum(counter.values())
         participant_to_percentages[participant] = pct_english
     print(participant_to_percentages)
+
+if __name__ == '__main__':
+    main()
