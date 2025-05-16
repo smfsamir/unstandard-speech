@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import os
 from tqdm import tqdm
@@ -29,14 +30,14 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # no mps support yet
 # NOTE: compute sampling rate function
 # librosa.get_samplerate(path)
 
-def compute_counts(identify_languge_fn, participant_id):
+def compute_counts(identify_languge_fn, dtype, participant_id, ):
     participant_files = list(filter(lambda x: participant_id in x, os.listdir(SPICE_DIRNAME)))
     assert len(participant_files) == 2
     tg_index = [idx for idx, s in enumerate(participant_files) if 'TextGrid' in s][0]
     wav_index = (0 if tg_index == 1 else 1)
     tg = textgrid.openTextgrid(f"{SPICE_DIRNAME}/{participant_files[tg_index]}", False)
     entries = tg.getTier('utterance').entries
-    data, _ = librosa.load(f"{SPICE_DIRNAME}/{participant_files[wav_index]}", sr=TARGET_SAMPLING_RATE)
+    data, _ = librosa.load(f"{SPICE_DIRNAME}/{participant_files[wav_index]}", sr=TARGET_SAMPLING_RATE, dtype=dtype)
     counter = Counter()
     for i in range(len(entries)):
         first_interval_start, first_interval_end = entries[i].start, entries[i].end
@@ -60,6 +61,7 @@ def main(lang_id_model):
     if lang_id_model == 'speechbrain':
         speechbrain_language_id = EncoderClassifier.from_hparams(source="speechbrain/lang-id-voxlingua107-ecapa", savedir=SCRATCH_DIR)
         identify_language = partial(identify_language_speechbrain, speechbrain_language_id)
+        dtype = np.float32 # default
     elif lang_id_model == 'owsm':
         s2l = Speech2Language.from_pretrained(
             model_tag=MODEL_ID,
@@ -69,11 +71,12 @@ def main(lang_id_model):
         identify_language_owsm_partial = partial(owsm_detect_language_from_array, s2l)
         identify_language_owsm = lambda sample_dict: identify_language_owsm_partial(sample_dict['audio']['array'])
         identify_language = identify_language_owsm
+        dtype = np.float64
     participants = ['VF20B', 'VF19B', 'VF21B', 'VF21D', 'VM21E', 'VM34A', 'VF19C', 'VF19A', 'VM20B'] # NOTE: don't forget that VF19A and VM20B is English-dominant, the other ones are not
     participant_to_percentages = {}
     all_counters = []
     for participant in tqdm(participants):
-        counter = compute_counts(identify_language, participant)
+        counter = compute_counts(identify_language, dtype, participant)
         pct_english = counter['en: English'] / sum(counter.values())
         participant_to_percentages[participant] = pct_english
     print(participant_to_percentages)
