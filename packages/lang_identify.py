@@ -20,6 +20,6 @@ def identify_language_speechbrain(language_id_model, sample):
         )
 
     # add batch dimension
-    signal = torch.from_numpy(wav_array).unsqueeze(0).to('cuda')
+    signal = torch.from_numpy(wav_array).unsqueeze(0)
     prediction = language_id_model.classify_batch(signal)  # type: ignore
     return {'language_prediction': prediction[3][0]}

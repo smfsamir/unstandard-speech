@@ -18,7 +18,7 @@ SPICE_DIRNAME = f"{HF_CACHE_DIR}/spice"
 SPICE_TMP_DIRNAME = f"{SCRATCH_DIR}/spice_temp"
 TARGET_SAMPLING_RATE= 16000
 
-language_id = EncoderClassifier.from_hparams(source="speechbrain/lang-id-voxlingua107-ecapa", savedir=SCRATCH_DIR).to('cuda')
+language_id = EncoderClassifier.from_hparams(source="speechbrain/lang-id-voxlingua107-ecapa", savedir=SCRATCH_DIR)
 
 # NOTE: compute sampling rate function
 # librosa.get_samplerate(path)
