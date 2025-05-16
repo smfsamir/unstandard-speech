@@ -65,6 +65,7 @@ def main(lang_id_model):
             model_tag=MODEL_ID,
             device=DEVICE,
             nbest=3,  # return nbest prediction and probability
+            cache_dir = HF_CACHE_DIR
         )
         identify_language = partial(owsm_detect_language_from_array, s2l)
     participants = ['VF20B', 'VF19B', 'VF21B', 'VF21D', 'VM21E', 'VM34A', 'VF19C', 'VF19A', 'VM20B'] # NOTE: don't forget that VF19A and VM20B is English-dominant, the other ones are not
