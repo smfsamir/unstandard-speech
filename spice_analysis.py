@@ -1,3 +1,4 @@
+import torch
 import os
 from tqdm import tqdm
 import soundfile as sf
@@ -8,7 +9,10 @@ from praatio import textgrid
 from dotenv import dotenv_values
 from functools import partial
 from speechbrain.inference.classifiers import EncoderClassifier
-from packages.lang_identify import identify_language_speechbrain
+from espnet2.bin.s2t_inference_language import Speech2Language
+import click
+
+from packages.lang_identify import identify_language_speechbrain, owsm_detect_language_from_array
 
 SCRATCH_DIR = dotenv_values(".env")["SCRATCH_SAVE_DIR"]
 DATASET_DIR = dotenv_values(".env")["DATASET_DIR"]
@@ -18,12 +22,14 @@ SPICE_DIRNAME = f"{HF_CACHE_DIR}/spice"
 SPICE_TMP_DIRNAME = f"{SCRATCH_DIR}/spice_temp"
 TARGET_SAMPLING_RATE= 16000
 
-language_id = EncoderClassifier.from_hparams(source="speechbrain/lang-id-voxlingua107-ecapa", savedir=SCRATCH_DIR)
+MODEL_ID = "espnet/owsm_v3.1_ebf"
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # no mps support yet
+
 
 # NOTE: compute sampling rate function
 # librosa.get_samplerate(path)
 
-def compute_counts(participant_id):
+def compute_counts(identify_languge_fn, participant_id):
     participant_files = list(filter(lambda x: participant_id in x, os.listdir(SPICE_DIRNAME)))
     assert len(participant_files) == 2
     tg_index = [idx for idx, s in enumerate(participant_files) if 'TextGrid' in s][0]
@@ -32,7 +38,6 @@ def compute_counts(participant_id):
     entries = tg.getTier('utterance').entries
     data, _ = librosa.load(f"{SPICE_DIRNAME}/{participant_files[wav_index]}", sr=TARGET_SAMPLING_RATE)
     counter = Counter()
-    identify_language = partial(identify_language_speechbrain, language_id)
     for i in range(len(entries)):
         first_interval_start, first_interval_end = entries[i].start, entries[i].end
         label = entries[i].label
@@ -45,16 +50,28 @@ def compute_counts(participant_id):
                     "sampling_rate": TARGET_SAMPLING_RATE
                 }
             }
-            prediction = identify_language(sample)['language_prediction']
+            prediction = identify_languge_fn(sample)['language_prediction']
             counter[prediction] += 1
     return counter
 
-if __name__ == '__main__':
+@click.command()
+@click.option('lang_id_model', type=click.Choice(['speechbrain', 'owsm']))
+def main(lang_id_model):
+    if lang_id_model == 'speechbrain':
+        speechbrain_language_id = EncoderClassifier.from_hparams(source="speechbrain/lang-id-voxlingua107-ecapa", savedir=SCRATCH_DIR)
+        identify_language = partial(identify_language_speechbrain, speechbrain_language_id)
+    elif lang_id_model == 'owsm':
+        s2l = Speech2Language.from_pretrained(
+            model_tag=MODEL_ID,
+            device=DEVICE,
+            nbest=3,  # return nbest prediction and probability
+        )
+        identify_language = partial(owsm_detect_language_from_array, s2l)
     participants = ['VF20B', 'VF19B', 'VF21B', 'VF21D', 'VM21E', 'VM34A', 'VF19C', 'VF19A', 'VM20B'] # NOTE: don't forget that VF19A and VM20B is English-dominant, the other ones are not
     participant_to_percentages = {}
     all_counters = []
     for participant in tqdm(participants):
-        counter = compute_counts(participant)
+        counter = compute_counts(identify_language, participant)
         pct_english = counter['en: English'] / sum(counter.values())
         participant_to_percentages[participant] = pct_english
     print(participant_to_percentages)
