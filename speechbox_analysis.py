@@ -28,7 +28,7 @@ s2l = Speech2Language.from_pretrained(
 )
 
 def _get_timestamp(seconds):
-    return timedelta(seconds=seconds)[2:]
+    return str(timedelta(seconds=seconds))[2:]
 
 def process_dhr(identify_language_fn):
     predictions = []
