@@ -1,3 +1,4 @@
+from tqdm import tqdm
 import polars as pl
 from functools import partial
 import ipdb
@@ -35,7 +36,7 @@ def process_dhr(identify_language_fn):
     backgrounds = []
     timestamps = []
     genders = []
-    for dirname in filter(lambda x: x.endswith("DHR"), os.listdir(SPEECHBOX_DIR)):
+    for dirname in tqdm(list(filter(lambda x: x.endswith("DHR"), os.listdir(SPEECHBOX_DIR)))):
         speechbox_subdir = f"{SPEECHBOX_DIR}/{dirname}"
         identifiers = set([Path(dir_fname).stem for dir_fname in os.listdir(speechbox_subdir)])
         for identifier in identifiers:
