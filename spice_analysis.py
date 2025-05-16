@@ -18,6 +18,8 @@ from packages.lang_identify import identify_language_speechbrain, owsm_detect_la
 SCRATCH_DIR = dotenv_values(".env")["SCRATCH_SAVE_DIR"]
 DATASET_DIR = dotenv_values(".env")["DATASET_DIR"]
 HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
+OWSM_EN_LABEL = "<en>"
+SPEECHBRAIN_EN_LABEL = 'en: English'
 
 SPICE_DIRNAME = f"{HF_CACHE_DIR}/spice"
 SPICE_TMP_DIRNAME = f"{SCRATCH_DIR}/spice_temp"
@@ -62,6 +64,7 @@ def main(lang_id_model):
         speechbrain_language_id = EncoderClassifier.from_hparams(source="speechbrain/lang-id-voxlingua107-ecapa", savedir=SCRATCH_DIR)
         identify_language = partial(identify_language_speechbrain, speechbrain_language_id)
         dtype = np.float32 # default
+        en_label = SPEECHBRAIN_EN_LABEL
     elif lang_id_model == 'owsm':
         s2l = Speech2Language.from_pretrained(
             model_tag=MODEL_ID,
@@ -72,12 +75,13 @@ def main(lang_id_model):
         identify_language_owsm = lambda sample_dict: identify_language_owsm_partial(sample_dict['audio']['array'])
         identify_language = identify_language_owsm
         dtype = np.float64
+        en_label = OWSM_EN_LABEL
     participants = ['VF20B', 'VF19B', 'VF21B', 'VF21D', 'VM21E', 'VM34A', 'VF19C', 'VF19A', 'VM20B'] # NOTE: don't forget that VF19A and VM20B is English-dominant, the other ones are not
     participant_to_percentages = {}
     all_counters = []
     for participant in tqdm(participants):
         counter = compute_counts(identify_language, dtype, participant)
-        pct_english = counter['en: English'] / sum(counter.values())
+        pct_english = counter[en_label] / sum(counter.values())
         participant_to_percentages[participant] = pct_english
     print(participant_to_percentages)
 
