@@ -18,7 +18,7 @@ from packages.lang_identify import identify_language_speechbrain, owsm_detect_la
 SCRATCH_DIR = dotenv_values(".env")["SCRATCH_SAVE_DIR"]
 DATASET_DIR = dotenv_values(".env")["DATASET_DIR"]
 HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
-OWSM_EN_LABEL = "<en>"
+OWSM_EN_LABEL = "<eng>"
 SPEECHBRAIN_EN_LABEL = 'en: English'
 
 SPICE_DIRNAME = f"{HF_CACHE_DIR}/spice"
