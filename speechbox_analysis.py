@@ -29,17 +29,17 @@ s2l = Speech2Language.from_pretrained(
     nbest=3  # return nbest prediction and probability
 )
 
-s2t = Speech2Text.from_pretrained(
-    model_tag=MODEL_ID,
-    device=DEVICE,
-    beam_size=5,
-    ctc_weight=0.0,
-    maxlenratio=0.0,
-    # below are default values which can be overwritten in __call__
-    lang_sym="<eng>",
-    task_sym="<asr>",
-    predict_time=False,
-)
+# s2t = Speech2Text.from_pretrained(
+#     model_tag=MODEL_ID,
+#     device=DEVICE,
+#     beam_size=5,
+#     ctc_weight=0.0,
+#     maxlenratio=0.0,
+#     # below are default values which can be overwritten in __call__
+#     lang_sym="<eng>",
+#     task_sym="<asr>",
+#     predict_time=False,
+# )
 
 def _get_timestamp(seconds):
     return str(timedelta(seconds=seconds))[2:]
@@ -74,7 +74,7 @@ def process_dhr(identify_language_fn):
                 prediction = identify_language_fn(sample)['language_prediction']
                 predictions.append(prediction)
                 gt_transcripts.append(gt_transcript)
-                s2t_transcripts.append()
+                # s2t_transcripts.append()
                 genders.append(identifier.split("_")[2])
                 backgrounds.append(identifier.split("_")[3])
                 timestamps.append(f"{_get_timestamp(first_interval_start)}-{_get_timestamp(first_interval_end)}")
@@ -83,7 +83,8 @@ def process_dhr(identify_language_fn):
         "timestamp": timestamps,
         "gender": genders, 
         "langid_prediction": predictions,
-        "background": backgrounds
+        "background": backgrounds,
+        "gt_transcript": gt_transcripts
     })
     ipdb.set_trace()
     return frame
