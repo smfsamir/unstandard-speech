@@ -9,7 +9,7 @@ import numpy as np
 import librosa
 from pathlib import Path
 from praatio import textgrid
-from espnet2.bin.s2t_inference_language import Speech2Language
+from espnet2.bin.s2t_inference_language import Speech2Language, Speech2Text
 
 import os
 from dotenv import dotenv_values
@@ -28,6 +28,18 @@ s2l = Speech2Language.from_pretrained(
     nbest=3  # return nbest prediction and probability
 )
 
+s2t = Speech2Text.from_pretrained(
+    model_tag=MODEL_ID,
+    device=DEVICE,
+    beam_size=5,
+    ctc_weight=0.0,
+    maxlenratio=0.0,
+    # below are default values which can be overwritten in __call__
+    lang_sym="<eng>",
+    task_sym="<asr>",
+    predict_time=False,
+)
+
 def _get_timestamp(seconds):
     return str(timedelta(seconds=seconds))[2:]
 
@@ -36,6 +48,8 @@ def process_dhr(identify_language_fn):
     backgrounds = []
     timestamps = []
     genders = []
+    s2t_transcripts = []
+    gt_transcripts = []
     for dirname in tqdm(list(filter(lambda x: x.endswith("DHR"), os.listdir(SPEECHBOX_DIR)))):
         speechbox_subdir = f"{SPEECHBOX_DIR}/{dirname}"
         identifiers = set([Path(dir_fname).stem for dir_fname in os.listdir(speechbox_subdir)])
@@ -53,8 +67,12 @@ def process_dhr(identify_language_fn):
                         "sampling_rate": TARGET_SAMPLING_RATE
                     }
                 }
+                gt_transcript = label.lower()
+                if gt_transcript == "":
+                    continue
                 prediction = identify_language_fn(sample)['language_prediction']
                 predictions.append(prediction)
+                gt_transcripts.append(gt_transcript)
                 genders.append(identifier.split("_")[2])
                 backgrounds.append(identifier.split("_")[3])
                 timestamps.append(f"{_get_timestamp(first_interval_start)}-{_get_timestamp(first_interval_end)}")
