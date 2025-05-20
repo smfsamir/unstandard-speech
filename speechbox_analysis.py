@@ -9,7 +9,8 @@ import numpy as np
 import librosa
 from pathlib import Path
 from praatio import textgrid
-from espnet2.bin.s2t_inference_language import Speech2Language, Speech2Text
+from espnet2.bin.s2t_inference_language import Speech2Language
+from espnet2.bin.s2t_inference import Speech2Text
 
 import os
 from dotenv import dotenv_values
@@ -73,6 +74,7 @@ def process_dhr(identify_language_fn):
                 prediction = identify_language_fn(sample)['language_prediction']
                 predictions.append(prediction)
                 gt_transcripts.append(gt_transcript)
+                s2t_transcripts.append()
                 genders.append(identifier.split("_")[2])
                 backgrounds.append(identifier.split("_")[3])
                 timestamps.append(f"{_get_timestamp(first_interval_start)}-{_get_timestamp(first_interval_end)}")
