@@ -39,7 +39,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # no mps support yet
 def _get_timestamp(seconds):
     return str(timedelta(seconds=seconds))[2:]
 
-def process_dhr(identify_language_fn, inference_column):
+def process_dhr(identify_language_fn, inference_column, **kwargs):
     predictions = []
     backgrounds = []
     timestamps = []
