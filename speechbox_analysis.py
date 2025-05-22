@@ -117,7 +117,8 @@ def transcribe_audio():
     step_dict['step_dhr_inference'] = SingletonStep(
         process_dhr_partial,
         {
-            'inference_column': 'transcription'
+            'inference_column': 'transcription', 
+            'version': '001'
         }
     )
     metadata = conduct(os.path.join(SCRATCH_SAVE_DIR, "tokenization_cache"), step_dict, "unstandard_speech_transcribe_speechbox")
