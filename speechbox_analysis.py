@@ -12,14 +12,20 @@ from pathlib import Path
 from praatio import textgrid
 from espnet2.bin.s2t_inference_language import Speech2Language
 from espnet2.bin.s2t_inference import Speech2Text
+# from jiwer import 
+# from flowmason import 
+from flowmason import conduct, SingletonStep, load_artifact_with_step_name, MapReduceStep, load_mr_artifact
+
 
 import os
 from dotenv import dotenv_values
+from collections import OrderedDict
 
 from packages.lang_identify import owsm_detect_language_from_array, owsm_transcribe_from_array
 
 MODEL_ID = "espnet/owsm_v3.1_ebf"
 HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
+SCRATCH_SAVE_DIR = dotenv_values(".env")['SCRATCH_SAVE_DIR']
 MACHINE = dotenv_values(".env")["MACHINE"]
 if MACHINE == "local":
     SPEECHBOX_DIR = f"allsstar/2152"
@@ -75,7 +81,6 @@ def process_dhr(identify_language_fn, inference_column):
         "background": backgrounds,
         "gt_transcript": gt_transcripts
     })
-    ipdb.set_trace()
     return frame
 
 # def speechbox_analysis():
@@ -106,7 +111,18 @@ def transcribe_audio():
     )
     transcribe_partial = partial(owsm_transcribe_from_array, s2t)
     identify_language_owsm = lambda sample_dict: transcribe_partial(sample_dict['audio']['array'])
-    process_dhr(identify_language_owsm, 'transcription')
+
+    process_dhr_partial = partial(process_dhr, identify_language_owsm)
+    step_dict = OrderedDict()
+    step_dict['step_dhr_inference'] = SingletonStep(
+        process_dhr_partial,
+        {
+            'inference_column': 'transcription'
+        }
+    )
+    metadata = conduct(os.path.join(SCRATCH_SAVE_DIR, "tokenization_cache"), step_dict, "unstandard_speech_transcribe_speechbox")
+    ipdb.set_trace()
+    frame = load_artifact_with_step_name(metadata, 'step_dhr_inference')
 
 @click.group()
 def main():
