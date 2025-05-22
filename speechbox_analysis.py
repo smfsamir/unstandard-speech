@@ -33,7 +33,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # no mps support yet
 def _get_timestamp(seconds):
     return str(timedelta(seconds=seconds))[2:]
 
-def process_dhr(identify_language_fn):
+def process_dhr(identify_language_fn, inference_column):
     predictions = []
     backgrounds = []
     timestamps = []
@@ -60,7 +60,7 @@ def process_dhr(identify_language_fn):
                 gt_transcript = label.lower()
                 if gt_transcript == "":
                     continue
-                prediction = identify_language_fn(sample)['language_prediction']
+                prediction = identify_language_fn(sample)[inference_column]
                 predictions.append(prediction)
                 gt_transcripts.append(gt_transcript)
                 # s2t_transcripts.append()
@@ -71,7 +71,7 @@ def process_dhr(identify_language_fn):
     frame = pl.DataFrame({
         "timestamp": timestamps,
         "gender": genders, 
-        "langid_prediction": predictions,
+        f"{inference_column}_prediction": predictions,
         "background": backgrounds,
         "gt_transcript": gt_transcripts
     })
@@ -89,7 +89,7 @@ def detect_language():
     )
     identify_language_owsm_partial = partial(owsm_detect_language_from_array, s2l)
     identify_language_owsm = lambda sample_dict: identify_language_owsm_partial(sample_dict['audio']['array'])
-    process_dhr(identify_language_owsm)
+    process_dhr(identify_language_owsm, 'langid')
     pass
 
 @click.command()
@@ -106,7 +106,7 @@ def transcribe_audio():
     )
     transcribe_partial = partial(owsm_transcribe_from_array, s2t)
     identify_language_owsm = lambda sample_dict: transcribe_partial(sample_dict['audio']['array'])
-    process_dhr(identify_language_owsm)
+    process_dhr(identify_language_owsm, 'transcription')
 
 @click.group()
 def main():
