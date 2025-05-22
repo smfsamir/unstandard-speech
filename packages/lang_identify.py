@@ -27,7 +27,7 @@ def identify_language_speechbrain(language_id_model, sample):
     # add batch dimension
     signal = torch.from_numpy(wav_array).unsqueeze(0)
     prediction = language_id_model.classify_batch(signal)  # type: ignore
-    return {'language_prediction': prediction[3][0]}
+    return {'langid': prediction[3][0]}
 
 def owsm_detect_language_from_array(
     owsm_model, 
@@ -38,7 +38,7 @@ def owsm_detect_language_from_array(
     ), "owsm expects float64 normalized pcm array"
 
     result = owsm_model(wav_array)
-    return {'language_prediction': result[0][0]}
+    return {'langid': result[0][0]}
 
 def _naive_decode_long(s2t, wav_array, config, chunk_size=30 * TARGET_SAMPLE_RATE):
     predictions = []
@@ -84,5 +84,5 @@ def owsm_transcribe_from_array(
             else:
                 return " ".join(res[2] for res in result)
     else:
-        return s2t(wav_array, **config)[0][-2]
+        return {'transcription': s2t(wav_array, **config)[0][-2]}
 # def identify_language_owsm(sample):
