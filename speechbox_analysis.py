@@ -12,7 +12,7 @@ from pathlib import Path
 from praatio import textgrid
 from espnet2.bin.s2t_inference_language import Speech2Language
 from espnet2.bin.s2t_inference import Speech2Text
-# from jiwer import 
+from jiwer import cer
 # from flowmason import 
 from flowmason import conduct, SingletonStep, load_artifact_with_step_name, MapReduceStep, load_mr_artifact
 
@@ -83,9 +83,11 @@ def process_dhr(identify_language_fn, inference_column, **kwargs):
     return frame
 
 def compute_cer(transcript_frame: pl.DataFrame, **kwargs):
-    return transcript_frame.with_columns({
-
-    })
+    cer_frame = transcript_frame.with_columns(
+        cer(pl.col('gt_transcript'), pl.col('transcription_prediction').lower()).alias('cer')
+    )
+    ipdb.set_trace()
+    return cer_frame
 
 # def speechbox_analysis():
 
@@ -126,12 +128,12 @@ def transcribe_audio():
             'version': '001'
         }
     )
-    # step_dict['step_compute_cer'] = SingletonStep(
-    #     compute_cer, 
-    #     {
-    #         'version': '001'
-    #     }
-    # )
+    step_dict['step_compute_cer'] = SingletonStep(
+        compute_cer, 
+        {
+            'version': '001'
+        }
+    )
     metadata = conduct(os.path.join(SCRATCH_SAVE_DIR, "tokenization_cache"), step_dict, "unstandard_speech_transcribe_speechbox")
     frame = load_artifact_with_step_name(metadata, 'step_dhr_inference')
 
