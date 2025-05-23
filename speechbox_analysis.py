@@ -131,6 +131,7 @@ def transcribe_audio():
     step_dict['step_compute_cer'] = SingletonStep(
         compute_cer, 
         {
+            'transcript_frame': 'step_dhr_inference',
             'version': '001'
         }
     )
