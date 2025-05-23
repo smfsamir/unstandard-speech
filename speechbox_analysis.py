@@ -73,7 +73,6 @@ def process_dhr(identify_language_fn, inference_column, **kwargs):
                 genders.append(identifier.split("_")[2])
                 backgrounds.append(identifier.split("_")[3])
                 timestamps.append(f"{_get_timestamp(first_interval_start)}-{_get_timestamp(first_interval_end)}")
-                break
     frame = pl.DataFrame({
         "timestamp": timestamps,
         "gender": genders, 
@@ -82,6 +81,11 @@ def process_dhr(identify_language_fn, inference_column, **kwargs):
         "gt_transcript": gt_transcripts
     })
     return frame
+
+def compute_cer(transcript_frame: pl.DataFrame, **kwargs):
+    return transcript_frame.with_columns({
+
+    })
 
 # def speechbox_analysis():
 
@@ -96,6 +100,7 @@ def detect_language():
     identify_language_owsm = lambda sample_dict: identify_language_owsm_partial(sample_dict['audio']['array'])
     process_dhr(identify_language_owsm, 'langid')
     pass
+
 
 @click.command()
 def transcribe_audio():
@@ -121,8 +126,13 @@ def transcribe_audio():
             'version': '001'
         }
     )
+    # step_dict['step_compute_cer'] = SingletonStep(
+    #     compute_cer, 
+    #     {
+    #         'version': '001'
+    #     }
+    # )
     metadata = conduct(os.path.join(SCRATCH_SAVE_DIR, "tokenization_cache"), step_dict, "unstandard_speech_transcribe_speechbox")
-    ipdb.set_trace()
     frame = load_artifact_with_step_name(metadata, 'step_dhr_inference')
 
 @click.group()
