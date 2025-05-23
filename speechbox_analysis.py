@@ -84,9 +84,10 @@ def process_dhr(identify_language_fn, inference_column, **kwargs):
 
 def compute_cer(transcript_frame: pl.DataFrame, **kwargs):
     cer_frame = transcript_frame.with_columns(
-        cer(pl.col('gt_transcript'), pl.col('transcription_prediction').lower()).alias('cer')
+        pl.struct(['gt_transcript', 'transcription_prediction']).apply(
+            lambda row: cer(row['gt_transcript'], row['transcription_prediction'].lower())
+        ).alias('cer')
     )
-    ipdb.set_trace()
     return cer_frame
 
 # def speechbox_analysis():
