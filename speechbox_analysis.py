@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
-from transformers import AutoProcessor, WhisperForConditionalGeneration
+from transformers import AutoProcessor, WhisperForConditionalGeneration, Wav2Vec2ForCTC, HubertModel
 import click
 from tqdm import tqdm
 import polars as pl
@@ -150,6 +150,33 @@ def get_whisper_transcription_fn():
         transcription = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
         return {'transcription': transcription}
     return transcribe_audio_whisper
+
+def get_mms_transcription_fn():
+    model_id = "facebook/mms-1b-all"
+    processor = AutoProcessor.from_pretrained(model_id)
+    model = Wav2Vec2ForCTC.from_pretrained(model_id)
+    def transcribe_audio_mms(sample_dict):
+        inputs = processor(sample_dict['audio']['array'], sampling_rate=16_000, return_tensors="pt")
+        with torch.no_grad():
+            outputs = model(**inputs).logits
+        ids = torch.argmax(outputs, dim=-1)[0]
+        transcription = processor.decode(ids)
+        return {'transcription': transcription}
+    return transcribe_audio_mms
+    
+def get_hubert_transcription_fn():
+    model = HubertModel.from_pretrained("facebook/hubert-large-ls960-ft").to("cuda")
+    processor = AutoProcessor.from_pretrained("facebook/hubert-base-ls960")
+
+    # audio file is decoded on the fly
+    def transcribe_audio_hubert(sample_dict):
+        inputs = processor(sample_dict["audio"]["array"], sampling_rate=sampling_rate, return_tensors="pt")
+        with torch.no_grad():
+            logits = model(**inputs).logits
+        predicted_ids = torch.argmax(logits, dim=-1)
+        transcription = processor.batch_decode(predicted_ids)
+        return {'transcription': transcription[0]}
+    return transcribe_audio_hubert
 
 @click.command()
 @click.argument('model_name', type=click.Choice(['owsm', 'whisper']))
