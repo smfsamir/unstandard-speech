@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
+from transformers import AutoProcessor, WhisperForConditionalGeneration
 import click
 from tqdm import tqdm
 import polars as pl
@@ -118,8 +119,7 @@ def step_visualize_cer(model_name, result_frame, **kwargs):
     fig.savefig(output_path)
     logger.info(f'saved to {output_path}')
 
-@click.command()
-def transcribe_audio():
+def get_owsm_transcription_fn():
     s2t = Speech2Text.from_pretrained(
         model_tag=MODEL_ID,
         device=DEVICE,
@@ -132,8 +132,30 @@ def transcribe_audio():
     )
     transcribe_partial = partial(owsm_transcribe_from_array, s2t)
     identify_language_owsm = lambda sample_dict: transcribe_partial(sample_dict['audio']['array'])
+    return identify_language_owsm
 
-    process_dhr_partial = partial(process_dhr, identify_language_owsm)
+def get_whisper_transcription_fn():
+    # whisper = 
+    # TODO: fill in.
+    processor = AutoProcessor.from_pretrained("openai/whisper-tiny.en")
+    model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny.en")
+    def transcribe_audio_whisper(sample_dict):
+        inputs = processor(sample_dict['audio']['array'], return_tensors="pt", truncation=False, padding="longest", return_attention_mask=True, sampling_rate=16_000)
+        inputs = inputs.to("cuda", torch.float32)
+        generated_ids = model.generate(**inputs)
+        transcription = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        return {'transcription': transcription}
+    return transcribe_audio_whisper
+
+@click.command()
+@click.argument('lang_id_model', type=click.Choice(['owsm', 'whisper']))
+def transcribe_audio(model_name):
+    if model_name == 'owsm':
+        transcription_fn = get_owsm_transcription_fn()
+    elif model_name == 'whisper':
+        transcription_fn = get_whisper_transcription_fn()
+
+    process_dhr_partial = partial(process_dhr, transcription_fn)
     step_dict = OrderedDict()
     step_dict['step_dhr_inference'] = SingletonStep(
         process_dhr_partial,
