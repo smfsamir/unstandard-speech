@@ -148,7 +148,7 @@ def get_whisper_transcription_fn():
     return transcribe_audio_whisper
 
 @click.command()
-@click.argument('lang_id_model', type=click.Choice(['owsm', 'whisper']))
+@click.argument('model_name', type=click.Choice(['owsm', 'whisper']))
 def transcribe_audio(model_name):
     if model_name == 'owsm':
         transcription_fn = get_owsm_transcription_fn()
