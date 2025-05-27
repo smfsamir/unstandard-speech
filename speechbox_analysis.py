@@ -115,6 +115,7 @@ def step_visualize_cer(model_name, result_frame, **kwargs):
     plt.tight_layout()
     output_path = f'{model_name}_output.png'
     fig.savefig(output_path)
+    plt.xticks(rotation=30)
     logger.info(f'saved to {output_path}')
 
 @click.command()
