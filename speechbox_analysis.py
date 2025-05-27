@@ -109,11 +109,11 @@ def detect_language():
     process_dhr(identify_language_owsm, 'langid')
     pass
 
-def step_visualize_cer(model_name, transcript_frame, **kwargs):
-    plot = sns.boxplot(data=transcript_frame.select('background', 'cer'), x='background', y='cer')
+def step_visualize_cer(model_name, result_frame, **kwargs):
+    plot = sns.boxplot(data=result_frame.select('background', 'cer'), x='background', y='cer')
     fig = plot.get_fig()
     plt.tight_layout()
-    output_path = 'owsm_output.png'
+    output_path = f'{model_name}_output.png'
     fig.save_fig(output_path)
     logger.info(f'saved to {output_path}')
 
@@ -152,7 +152,7 @@ def transcribe_audio():
         step_visualize_cer, 
         {
             'model_name': 'owsm',
-            'results_frame': 'step_compute_cer', 
+            'result_frame': 'step_compute_cer', 
             'version': '001'
         }
     )
