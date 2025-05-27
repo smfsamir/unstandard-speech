@@ -26,6 +26,8 @@ from collections import OrderedDict
 
 from packages.lang_identify import owsm_detect_language_from_array, owsm_transcribe_from_array
 
+logger = loguru.logger
+
 MODEL_ID = "espnet/owsm_v3.1_ebf"
 HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
 SCRATCH_SAVE_DIR = dotenv_values(".env")['SCRATCH_SAVE_DIR']
@@ -111,8 +113,9 @@ def step_visualize_cer(model_name, transcript_frame, **kwargs):
     plot = sns.boxplot(data=transcript_frame.select('background', 'cer'), x='background', y='cer')
     fig = plot.get_fig()
     plt.tight_layout()
-    fig.save_fig('owsm_output.png')
-    logger.info('')
+    output_path = 'owsm_output.png'
+    fig.save_fig(output_path)
+    logger.info(f'saved to {output_path}')
 
 @click.command()
 def transcribe_audio():
