@@ -1,7 +1,10 @@
+import matplotlib.pyplot as plt
+import seaborn as sns
 import click
 from tqdm import tqdm
 import polars as pl
 from functools import partial
+import loguru
 import ipdb
 from datetime import timedelta
 import torch
@@ -104,6 +107,12 @@ def detect_language():
     process_dhr(identify_language_owsm, 'langid')
     pass
 
+def step_visualize_cer(model_name, transcript_frame, **kwargs):
+    plot = sns.boxplot(data=transcript_frame.select('background', 'cer'), x='background', y='cer')
+    fig = plot.get_fig()
+    plt.tight_layout()
+    fig.save_fig('owsm_output.png')
+    logger.info('')
 
 @click.command()
 def transcribe_audio():
@@ -133,6 +142,14 @@ def transcribe_audio():
         compute_cer, 
         {
             'transcript_frame': 'step_dhr_inference',
+            'version': '001'
+        }
+    )
+    step_dict['visualize_cer'] = SingletonStep(
+        step_visualize_cer, 
+        {
+            'model_name': 'owsm',
+            'results_frame': 'step_compute_cer', 
             'version': '001'
         }
     )
