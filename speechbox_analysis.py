@@ -111,7 +111,7 @@ def detect_language():
 
 def step_visualize_cer(model_name, result_frame, **kwargs):
     plot = sns.boxplot(data=result_frame.select('background', 'cer'), x='background', y='cer')
-    fig = plot.get_fig()
+    fig = plot.get_figure()
     plt.tight_layout()
     output_path = f'{model_name}_output.png'
     fig.save_fig(output_path)
