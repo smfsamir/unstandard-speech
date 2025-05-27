@@ -179,14 +179,15 @@ def get_hubert_transcription_fn():
 def get_qwen_2_audio_fn():
     prompt = "<|audio_bos|><|AUDIO|><|audio_eos|>Generate the caption in English:"
     processor = AutoProcessor.from_pretrained("Qwen/Qwen2-Audio-7B" ,trust_remote_code=True, cache_dir=HF_CACHE_DIR)
-    model = Qwen2AudioForConditionalGeneration.from_pretrained("Qwen/Qwen2-Audio-7B" ,trust_remote_code=True, cache_dir=HF_CACHE_DIR)
+    model = Qwen2AudioForConditionalGeneration.from_pretrained("Qwen/Qwen2-Audio-7B" ,trust_remote_code=True, cache_dir=HF_CACHE_DIR).to('cuda')
 
     def transcribe_audio_qwen(sample_dict):
         array = sample_dict['audio']['array']
-        inputs = processor(text=prompt, audios=array, return_tensors="pt")
+        inputs = processor(text=prompt, audios=array, return_tensors="pt").to('cuda')
         generated_ids = model.generate(**inputs, max_length=256)
         generated_ids = generated_ids[:, inputs.input_ids.size(1):]
         response = processor.batch_decode(generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        logger.info(f"QWEN-2 response: {response}")
         return {'transcript': response}
     return transcribe_audio_qwen
 
