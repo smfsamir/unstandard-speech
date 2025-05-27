@@ -114,7 +114,7 @@ def step_visualize_cer(model_name, result_frame, **kwargs):
     fig = plot.get_figure()
     plt.tight_layout()
     output_path = f'{model_name}_output.png'
-    fig.save_fig(output_path)
+    fig.savefig(output_path)
     logger.info(f'saved to {output_path}')
 
 @click.command()
