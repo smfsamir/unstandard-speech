@@ -141,11 +141,9 @@ def get_whisper_transcription_fn():
     processor = AutoProcessor.from_pretrained("openai/whisper-large", cache_dir=HF_CACHE_DIR)
     def transcribe_audio_whisper(sample_dict):
         audio_array = sample_dict['audio']['array']
-        inputs = processor(audio_array, return_tensors="pt", truncation=False, padding="longest", return_attention_mask=True, sampling_rate=16_000)
         input_features = processor(
             audio_array, sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt"
-        ).input_features
-        inputs = inputs.to("cuda", torch.float32)
+        ).input_features.to('cuda')
         generated_ids = model.generate(input_features, language='en')
         transcription = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
         return {'transcription': transcription}
@@ -170,7 +168,7 @@ def get_hubert_transcription_fn():
 
     # audio file is decoded on the fly
     def transcribe_audio_hubert(sample_dict):
-        inputs = processor(sample_dict["audio"]["array"], sampling_rate=sampling_rate, return_tensors="pt")
+        inputs = processor(sample_dict["audio"]["array"], sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt")
         with torch.no_grad():
             logits = model(**inputs).logits
         predicted_ids = torch.argmax(logits, dim=-1)
@@ -179,12 +177,16 @@ def get_hubert_transcription_fn():
     return transcribe_audio_hubert
 
 @click.command()
-@click.argument('model_name', type=click.Choice(['owsm', 'whisper']))
+@click.argument('model_name', type=click.Choice(['owsm', 'whisper', 'mms', 'hubert']))
 def transcribe_audio(model_name):
     if model_name == 'owsm':
         transcription_fn = get_owsm_transcription_fn()
     elif model_name == 'whisper':
         transcription_fn = get_whisper_transcription_fn()
+    elif model_name == 'mms':
+        transcription_fn = get_mms_transcription_fn()
+    elif model_name == 'hubert':
+        transcription_fn = get_hubert_transcription_fn()
 
     process_dhr_partial = partial(process_dhr, transcription_fn)
     step_dict = OrderedDict()
