@@ -137,12 +137,16 @@ def get_owsm_transcription_fn():
 def get_whisper_transcription_fn():
     # whisper = 
     # TODO: fill in.
-    processor = AutoProcessor.from_pretrained("openai/whisper-tiny.en")
-    model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny.en")
+    model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-large", cache_dir=HF_CACHE_DIR)
+    processor = AutoProcessor.from_pretrained("openai/whisper-large.en", cache_dir=HF_CACHE_DIR)
     def transcribe_audio_whisper(sample_dict):
-        inputs = processor(sample_dict['audio']['array'], return_tensors="pt", truncation=False, padding="longest", return_attention_mask=True, sampling_rate=16_000)
+        audio_array = sample_dict['audio']['array']
+        inputs = processor(audio_array, return_tensors="pt", truncation=False, padding="longest", return_attention_mask=True, sampling_rate=16_000)
+        input_features = processor(
+            audio_array, sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt"
+        ).input_features
         inputs = inputs.to("cuda", torch.float32)
-        generated_ids = model.generate(**inputs)
+        generated_ids = model.generate(input_features, language='en')
         transcription = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
         return {'transcription': transcription}
     return transcribe_audio_whisper
@@ -161,7 +165,8 @@ def transcribe_audio(model_name):
         process_dhr_partial,
         {
             'inference_column': 'transcription', 
-            'version': '001'
+            'version': '001', 
+            'model_name': model_name
         }
     )
     step_dict['step_compute_cer'] = SingletonStep(
