@@ -188,9 +188,10 @@ def get_qwen_2_audio_fn():
         generated_ids = generated_ids[:, inputs.input_ids.size(1):]
         response = processor.batch_decode(generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
         return {'transcript': response}
+    return transcribe_audio_qwen
 
 @click.command()
-@click.argument('model_name', type=click.Choice(['owsm', 'whisper', 'mms', 'hubert']))
+@click.argument('model_name', type=click.Choice(['owsm', 'whisper', 'mms', 'hubert', 'qwen']))
 def transcribe_audio(model_name):
     if model_name == 'owsm':
         transcription_fn = get_owsm_transcription_fn()
@@ -200,6 +201,8 @@ def transcribe_audio(model_name):
         transcription_fn = get_mms_transcription_fn()
     elif model_name == 'hubert':
         transcription_fn = get_hubert_transcription_fn()
+    elif model_name == 'qwen':
+        transcription_fn = get_qwen_2_audio_fn()
 
     process_dhr_partial = partial(process_dhr, transcription_fn)
     step_dict = OrderedDict()
