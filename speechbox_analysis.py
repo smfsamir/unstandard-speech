@@ -138,7 +138,7 @@ def get_whisper_transcription_fn():
     # whisper = 
     # TODO: fill in.
     model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-large", cache_dir=HF_CACHE_DIR)
-    processor = AutoProcessor.from_pretrained("openai/whisper-large.en", cache_dir=HF_CACHE_DIR)
+    processor = AutoProcessor.from_pretrained("openai/whisper-large", cache_dir=HF_CACHE_DIR)
     def transcribe_audio_whisper(sample_dict):
         audio_array = sample_dict['audio']['array']
         inputs = processor(audio_array, return_tensors="pt", truncation=False, padding="longest", return_attention_mask=True, sampling_rate=16_000)
