@@ -184,7 +184,7 @@ def get_qwen_2_audio_fn():
     def transcribe_audio_qwen(sample_dict):
         array = sample_dict['audio']['array']
         inputs = processor(text=prompt, audios=array, return_tensors="pt").to('cuda')
-        generated_ids = model.generate(**inputs, max_length=256)
+        generated_ids = model.generate(**inputs, max_new_tokens=256)
         generated_ids = generated_ids[:, inputs.input_ids.size(1):]
         response = processor.batch_decode(generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
         logger.info(f"QWEN-2 response: {response}")
