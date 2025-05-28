@@ -244,7 +244,7 @@ def transcribe_audio(model_name):
         process_dhr_partial,
         {
             'inference_column': 'transcription', 
-            'version': '001', 
+            'version': '002', 
             'model_name': model_name
         }
     )
