@@ -162,6 +162,7 @@ def get_mms_transcription_fn():
             transcription = processor.decode(ids)
             return {'transcription': transcription}
         except RuntimeError as e:
+            logger.warning("Obtained runtime error")
             return {'transcription': 'MMS RUNTIME ERROR'}
     return transcribe_audio_mms
     
