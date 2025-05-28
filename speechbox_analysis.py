@@ -225,7 +225,7 @@ def transcribe_audio(model_name):
     step_dict['visualize_cer'] = SingletonStep(
         step_visualize_cer, 
         {
-            'model_name': 'owsm',
+            'model_name': model_name,
             'result_frame': 'step_compute_cer', 
             'version': '001'
         }
