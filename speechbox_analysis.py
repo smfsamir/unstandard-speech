@@ -167,8 +167,8 @@ def get_mms_transcription_fn():
     return transcribe_audio_mms
 
 def get_wavlm_transcription_fn():
-    processor = AutoProcessor.from_pretrained("microsoft/wavlm-base")
-    model = WavLMForCTC.from_pretrained("microsoft/wavlm-base").to('cuda')
+    processor = AutoProcessor.from_pretrained("microsoft/wavlm-base", cache_dir=HF_CACHE_DIR)
+    model = WavLMForCTC.from_pretrained("microsoft/wavlm-base", cache_dir=HF_CACHE_DIR).to('cuda')
 
     # audio file is decoded on the fly
     def transcribe_audio_wavlm(sample_dict):
@@ -179,6 +179,7 @@ def get_wavlm_transcription_fn():
         # transcribe speech
         transcription = processor.batch_decode(predicted_ids)
         return {'transcription': transcription[0]}
+    return transcribe_audio_wavlm
     
 def get_hubert_transcription_fn():
     model = HubertModel.from_pretrained("facebook/hubert-large-ls960-ft").to("cuda")
