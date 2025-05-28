@@ -175,13 +175,17 @@ def get_wavlm_transcription_fn():
     # audio file is decoded on the fly
     def transcribe_audio_wavlm(sample_dict):
         inputs = processor(sample_dict["audio"]["array"], sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt").to('cuda')
-        with torch.no_grad():
-            logits = model(**inputs).logits
-        predicted_ids = torch.argmax(logits, dim=-1)
+        try:
+            with torch.no_grad():
+                logits = model(**inputs).logits
+            predicted_ids = torch.argmax(logits, dim=-1)
 
-        # transcribe speech
-        transcription = processor.batch_decode(predicted_ids)
-        return {'transcription': transcription[0]}
+            # transcribe speech
+            transcription = processor.batch_decode(predicted_ids)
+            return {'transcription': transcription[0]}
+        except RuntimeError:
+            logger.warning('Runtime exception')
+            return {'transcription': 'WAVLM RUNTIME ERROR'}
     return transcribe_audio_wavlm
     
 def get_hubert_transcription_fn():
