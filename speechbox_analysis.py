@@ -177,7 +177,7 @@ def get_hubert_transcription_fn():
     return transcribe_audio_hubert
 
 def get_qwen_2_audio_fn():
-    prompt = "<|audio_bos|><|AUDIO|><|audio_eos|>Generate the caption in English:"
+    prompt = "<|audio_bos|><|AUDIO|><|audio_eos|>Transcribe this recording in English:"
     processor = AutoProcessor.from_pretrained("Qwen/Qwen2-Audio-7B" ,trust_remote_code=True, cache_dir=HF_CACHE_DIR)
     model = Qwen2AudioForConditionalGeneration.from_pretrained("Qwen/Qwen2-Audio-7B" ,trust_remote_code=True, cache_dir=HF_CACHE_DIR).to('cuda')
 
