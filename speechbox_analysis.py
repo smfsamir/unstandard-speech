@@ -154,12 +154,15 @@ def get_mms_transcription_fn():
     processor = AutoProcessor.from_pretrained(model_id)
     model = Wav2Vec2ForCTC.from_pretrained(model_id).to('cuda')
     def transcribe_audio_mms(sample_dict):
-        inputs = processor(sample_dict['audio']['array'], sampling_rate=16_000, return_tensors="pt").to('cuda')
-        with torch.no_grad():
-            outputs = model(**inputs).logits
-        ids = torch.argmax(outputs, dim=-1)[0]
-        transcription = processor.decode(ids)
-        return {'transcription': transcription}
+        try:
+            inputs = processor(sample_dict['audio']['array'], sampling_rate=16_000, return_tensors="pt").to('cuda')
+            with torch.no_grad():
+                outputs = model(**inputs).logits
+            ids = torch.argmax(outputs, dim=-1)[0]
+            transcription = processor.decode(ids)
+            return {'transcription': transcription}
+        except RuntimeError as e:
+            return {'transcription': 'MMS RUNTIME ERROR'}
     return transcribe_audio_mms
     
 def get_hubert_transcription_fn():
