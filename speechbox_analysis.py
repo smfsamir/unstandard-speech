@@ -90,7 +90,7 @@ def process_dhr(identify_language_fn, inference_column, **kwargs):
 
 def compute_cer(transcript_frame: pl.DataFrame, **kwargs):
     cer_frame = transcript_frame.with_columns(
-        pl.struct(['gt_transcript', 'transcription_prediction']).apply(
+        pl.struct(['gt_transcript', 'transcription_prediction']).map_elements(
             lambda row: cer(row['gt_transcript'], row['transcription_prediction'].lower())
         ).alias('cer')
     )
