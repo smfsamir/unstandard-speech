@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
-from transformers import AutoProcessor, WhisperForConditionalGeneration, Wav2Vec2ForCTC, HubertModel, Qwen2AudioForConditionalGeneration
+from transformers import AutoProcessor, WhisperForConditionalGeneration, Wav2Vec2ForCTC, HubertModel, Qwen2AudioForConditionalGeneration, WavLMForCTC
 import click
 from tqdm import tqdm
 import polars as pl
@@ -165,6 +165,20 @@ def get_mms_transcription_fn():
             logger.warning("Obtained runtime error")
             return {'transcription': 'MMS RUNTIME ERROR'}
     return transcribe_audio_mms
+
+def get_wavlm_transcription_fn():
+    processor = AutoProcessor.from_pretrained("microsoft/wavlm-base")
+    model = WavLMForCTC.from_pretrained("microsoft/wavlm-base").to('cuda')
+
+    # audio file is decoded on the fly
+    def transcribe_audio_wavlm(sample_dict):
+        inputs = processor(sample_dict["audio"]["array"], sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt").to('cuda')
+        with torch.no_grad():
+            logits = model(**inputs).logits
+        predicted_ids = torch.argmax(logits, dim=-1)
+        # transcribe speech
+        transcription = processor.batch_decode(predicted_ids)
+        return {'transcription': transcription[0]}
     
 def get_hubert_transcription_fn():
     model = HubertModel.from_pretrained("facebook/hubert-large-ls960-ft").to("cuda")
@@ -196,7 +210,7 @@ def get_qwen_2_audio_fn():
     return transcribe_audio_qwen
 
 @click.command()
-@click.argument('model_name', type=click.Choice(['owsm', 'whisper', 'mms', 'hubert', 'qwen']))
+@click.argument('model_name', type=click.Choice(['owsm', 'whisper', 'mms', 'hubert', 'qwen', 'wavlm']))
 def transcribe_audio(model_name):
     if model_name == 'owsm':
         transcription_fn = get_owsm_transcription_fn()
@@ -208,6 +222,8 @@ def transcribe_audio(model_name):
         transcription_fn = get_hubert_transcription_fn()
     elif model_name == 'qwen':
         transcription_fn = get_qwen_2_audio_fn()
+    elif model_name == 'wavlm':
+        transcription_fn = get_wavlm_transcription_fn()
 
     process_dhr_partial = partial(process_dhr, transcription_fn)
     step_dict = OrderedDict()
