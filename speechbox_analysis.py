@@ -152,9 +152,9 @@ def get_whisper_transcription_fn():
 def get_mms_transcription_fn():
     model_id = "facebook/mms-1b-all"
     processor = AutoProcessor.from_pretrained(model_id)
-    model = Wav2Vec2ForCTC.from_pretrained(model_id)
+    model = Wav2Vec2ForCTC.from_pretrained(model_id).to('cuda')
     def transcribe_audio_mms(sample_dict):
-        inputs = processor(sample_dict['audio']['array'], sampling_rate=16_000, return_tensors="pt")
+        inputs = processor(sample_dict['audio']['array'], sampling_rate=16_000, return_tensors="pt").to('cuda')
         with torch.no_grad():
             outputs = model(**inputs).logits
         ids = torch.argmax(outputs, dim=-1)[0]
