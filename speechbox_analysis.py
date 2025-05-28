@@ -170,11 +170,11 @@ def get_wavlm_transcription_fn():
     # processor = AutoProcessor.from_pretrained("microsoft/wavlm-base", cache_dir=HF_CACHE_DIR)
     # model = WavLMForCTC.from_pretrained("microsoft/wavlm-base", cache_dir=HF_CACHE_DIR).to('cuda')
     processor = AutoProcessor.from_pretrained("facebook/wav2vec2-base-960h", cache_dir=HF_CACHE_DIR)
-    model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-base-960h", cache_dir=HF_CACHE_DIR)
+    model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-base-960h", cache_dir=HF_CACHE_DIR).to('cuda')
 
     # audio file is decoded on the fly
     def transcribe_audio_wavlm(sample_dict):
-        inputs = processor(sample_dict["audio"]["array"], sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt")
+        inputs = processor(sample_dict["audio"]["array"], sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt").to('cuda')
         with torch.no_grad():
             logits = model(**inputs).logits
         predicted_ids = torch.argmax(logits, dim=-1)
