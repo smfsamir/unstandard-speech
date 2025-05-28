@@ -168,7 +168,7 @@ def get_hubert_transcription_fn():
 
     # audio file is decoded on the fly
     def transcribe_audio_hubert(sample_dict):
-        inputs = processor(sample_dict["audio"]["array"], sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt")
+        inputs = processor(sample_dict["audio"]["array"], sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt").to('cuda')
         with torch.no_grad():
             logits = model(**inputs).logits
         predicted_ids = torch.argmax(logits, dim=-1)
