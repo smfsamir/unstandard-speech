@@ -1,6 +1,7 @@
+import dill
 import matplotlib.pyplot as plt
 import seaborn as sns
-from transformers import AutoProcessor, WhisperForConditionalGeneration, Wav2Vec2ForCTC, HubertModel, Qwen2AudioForConditionalGeneration, WavLMForCTC
+from transformers import AutoProcessor, WhisperForConditionalGeneration, Wav2Vec2ForCTC, HubertModel, WavLMForCTC
 import click
 from tqdm import tqdm
 import polars as pl
@@ -52,11 +53,13 @@ def process_dhr(identify_language_fn, inference_column, **kwargs):
     genders = []
     s2t_transcripts = []
     gt_transcripts = []
+    nids = []
     for dirname in tqdm(list(filter(lambda x: x.endswith("DHR"), os.listdir(SPEECHBOX_DIR)))):
         speechbox_subdir = f"{SPEECHBOX_DIR}/{dirname}"
         identifiers = set([Path(dir_fname).stem for dir_fname in os.listdir(speechbox_subdir)])
         for identifier in identifiers:
             tg = textgrid.openTextgrid(f"{speechbox_subdir}/{identifier}.TextGrid", False)
+            nid = identifier.split('_')[1]
             entries = tg.getTier('utt').entries
             data, _ = librosa.load(f"{speechbox_subdir}/{identifier}.wav", sr=TARGET_SAMPLING_RATE, dtype=np.float64)
             for i in range(len(entries)):
@@ -79,12 +82,14 @@ def process_dhr(identify_language_fn, inference_column, **kwargs):
                 genders.append(identifier.split("_")[2])
                 backgrounds.append(identifier.split("_")[3])
                 timestamps.append(f"{_get_timestamp(first_interval_start)}-{_get_timestamp(first_interval_end)}")
+                nids.append(nid)
     frame = pl.DataFrame({
         "timestamp": timestamps,
         "gender": genders, 
         f"{inference_column}_prediction": predictions,
         "background": backgrounds,
-        "gt_transcript": gt_transcripts
+        "gt_transcript": gt_transcripts, 
+        "nid": nids
     })
     return frame
 
@@ -261,12 +266,19 @@ def transcribe_audio(model_name):
     metadata = conduct(os.path.join(SCRATCH_SAVE_DIR, "tokenization_cache"), step_dict, "unstandard_speech_transcribe_speechbox")
     frame = load_artifact_with_step_name(metadata, 'step_dhr_inference')
 
+@click.command()
+def load_fm_artifact():
+    with open("tokenization_cache/5114c8c2f7e5f32e28f4ad831acf39188a0430e5cb5dc29d6a5818f05e405dfd", 'rb') as f:
+        frame = dill.load(f)
+        ipdb.set_trace()
+
 @click.group()
 def main():
     pass
 
 main.add_command(detect_language)
 main.add_command(transcribe_audio)
+main.add_command(load_fm_artifact)
 
 if __name__ == '__main__':
     main()
