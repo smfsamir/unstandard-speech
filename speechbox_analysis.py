@@ -222,6 +222,21 @@ def get_qwen_2_audio_fn():
         return {'transcription': response}
     return transcribe_audio_qwen
 
+def step_analyze_predicted_transcripts(
+    cer_frame: pl.DataFrame, 
+    **kwargs
+):
+    # Drop everything with a greater than 50% CER
+    frame = cer_frame.filter(pl.col('cer') < 0.50)
+    # TODO: sort by group error rate and take the top 30 error-prone transcripts (with CERs) for each group.
+    frame = frame.with_columns([
+        pl.col('cer').mean().over('lang_background').alias('avg_cer_per_group'),
+        ]).sort(['avg_cer_per_group', 'cer'], descending=[True, True]).with_columns([
+        pl.int_range(0, pl.count()).over('lang_background').alias('rank')])\
+        .filter(pl.col('rank') < 30)\
+        .drop('rank')  # Optional: drop the temporary rank column
+    ipdb.set_trace()
+
 @click.command()
 @click.argument('model_name', type=click.Choice(['owsm', 'whisper', 'mms', 'hubert', 'qwen', 'wavlm']))
 def transcribe_audio(model_name):
@@ -263,6 +278,7 @@ def transcribe_audio(model_name):
             'version': '001'
         }
     )
+
     metadata = conduct(os.path.join(SCRATCH_SAVE_DIR, "tokenization_cache"), step_dict, "unstandard_speech_transcribe_speechbox")
     frame = load_artifact_with_step_name(metadata, 'step_dhr_inference')
 
