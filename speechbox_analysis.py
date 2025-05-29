@@ -223,6 +223,7 @@ def get_qwen_2_audio_fn():
     return transcribe_audio_qwen
 
 def step_analyze_predicted_transcripts(
+    model_name: str,
     cer_frame: pl.DataFrame, 
     **kwargs
 ):
@@ -275,6 +276,14 @@ def transcribe_audio(model_name):
         {
             'model_name': model_name,
             'result_frame': 'step_compute_cer', 
+            'version': '001'
+        }
+    )
+    step_dict['analyze_transcripts'] = SingletonStep(
+        step_analyze_predicted_transcripts,
+        {
+            'model_name': model_name, 
+            'cer_frame': 'step_compute_cer', 
             'version': '001'
         }
     )
