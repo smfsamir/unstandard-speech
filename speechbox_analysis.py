@@ -231,9 +231,9 @@ def step_analyze_predicted_transcripts(
     frame = cer_frame.filter(pl.col('cer') < 0.50)
     # TODO: sort by group error rate and take the top 30 error-prone transcripts (with CERs) for each group.
     frame = frame.with_columns([
-        pl.col('cer').mean().over('lang_background').alias('avg_cer_per_group'),
+        pl.col('cer').mean().over('background').alias('avg_cer_per_group'),
         ]).sort(['avg_cer_per_group', 'cer'], descending=[True, True]).with_columns([
-        pl.int_range(0, pl.count()).over('lang_background').alias('rank')])\
+        pl.int_range(0, pl.count()).over('background').alias('rank')])\
         .filter(pl.col('rank') < 30)\
         .drop('rank')  # Optional: drop the temporary rank column
     ipdb.set_trace()
