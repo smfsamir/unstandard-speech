@@ -229,14 +229,19 @@ def step_analyze_predicted_transcripts(
 ):
     # Drop everything with a greater than 50% CER
     frame = cer_frame.filter(pl.col('cer') < 0.50)
-    # TODO: sort by group error rate and take the top 30 error-prone transcripts (with CERs) for each group.
     frame = frame.with_columns([
         pl.col('cer').mean().over('background').alias('avg_cer_per_group'),
         ]).sort(['avg_cer_per_group', 'cer'], descending=[True, True]).with_columns([
         pl.int_range(0, pl.count()).over('background').alias('rank')])\
         .filter(pl.col('rank') < 30)\
         .drop('rank')  # Optional: drop the temporary rank column
-    ipdb.set_trace()
+    with open(f'{model_name}_top_30.txt', 'w') as f:
+        for background in frame['background'].unique(maintain_order=True):
+            subset_frame = frame.filter(pl.col('background')==background)
+            f.write(f"==={background.upper()}===")
+            for i, row in enumerate(subset_frame.iter_rows(named=True)):
+                f.write(f"{i + 1}. {row['transcript_prediction'].lower()} (CER: {row['cer']:.2f}. GT: {row['gt_transcript']})\n")
+            f.write("\n")
 
 @click.command()
 @click.argument('model_name', type=click.Choice(['owsm', 'whisper', 'mms', 'hubert', 'qwen', 'wavlm']))
