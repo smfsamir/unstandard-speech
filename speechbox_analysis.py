@@ -238,7 +238,7 @@ def step_analyze_predicted_transcripts(
     with open(f'{model_name}_top_30.txt', 'w') as f:
         for background in frame['background'].unique(maintain_order=True):
             subset_frame = frame.filter(pl.col('background')==background)
-            f.write(f"==={background.upper()}===")
+            f.write(f"==={background.upper()}===\n")
             for i, row in enumerate(subset_frame.iter_rows(named=True)):
                 f.write(f"{i + 1}. {row['transcription_prediction'].lower()} (CER: {row['cer']:.2f}. GT: {row['gt_transcript']})\n")
             f.write("\n")
