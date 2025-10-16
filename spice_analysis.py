@@ -15,7 +15,7 @@ import click
 from packages.lang_identify import identify_language_speechbrain, owsm_detect_language_from_array
 from packages.mms import mms_transcribe_from_array
 
-SCRATCH_DIR = dotenv_values(".env")["SCRATCH_SAVE_DIR"]
+SCRATCH_DIR = dotenv_values(".env")["SCRATCH_DIR"]
 HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
 
 SPICE_DIRNAME = f"spice"
