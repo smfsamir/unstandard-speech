@@ -1,4 +1,5 @@
-import polars as pl
+# import polars as pl
+import pandas as pd
 import ipdb
 import numpy as np
 from string import punctuation
@@ -59,7 +60,7 @@ def transcribe_valid_snippets(model_name, dtype, participant_id):
         prediction = transcribe_fn(slice)
         predictions.append(prediction)
         transcripts.append(transcript)
-    frame = pl.DataFrame(
+    frame = pd.DataFrame(
         {
             "prediction": predictions,
             "transcript": transcripts,
