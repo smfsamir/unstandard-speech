@@ -9,9 +9,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from .audio import audio_file_to_array, TARGET_SAMPLE_RATE
 
 import torch
+from dotenv import dotenv_values
 import numpy as np
 from transformers import Wav2Vec2ForCTC, AutoProcessor
 
+HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
 DEVICE = (
     "cuda"
     if torch.cuda.is_available()
@@ -22,7 +24,7 @@ model_id = "facebook/mms-1b-all"
 # model_id = "mms-meta/mms-zeroshot-300m"
 
 processor = AutoProcessor.from_pretrained(model_id)
-model = Wav2Vec2ForCTC.from_pretrained(model_id).to(DEVICE)  # type: ignore
+model = Wav2Vec2ForCTC.from_pretrained(model_id, cache_dir=HF_CACHE_DIR).to(DEVICE)  # type: ignore
 
 SUPPORTED_LANGUAGES = processor.tokenizer.vocab.keys()
 
