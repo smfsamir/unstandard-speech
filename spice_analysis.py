@@ -25,13 +25,15 @@ def transcribe_valid_snippets(dtype, participant_id):
     participant_full_wav_file = get_participant_wav_file(participant_id)
     annotated_tg = get_annotated_textgrid(participant_id)
     entries = textgrid.openTextgrid(annotated_tg, includeEmptyIntervals=True).getTier('is-valid').entries
+    transcript_entries = textgrid.openTextgrid(annotated_tg, includeEmptyIntervals=True).getTier('utterance').entries
     # only keep entries where the label is 'Y'
-    entries = [e for e in entries if 'Y' in e.label.strip()]
     data, _ = librosa.load(participant_full_wav_file, sr=TARGET_SAMPLING_RATE, dtype=dtype)
     counter = Counter()
     for i in range(len(entries)):
+        if entries[i][2].strip() != 'Y':
+            continue
+        transcript = transcript_entries[i][2].strip()
         first_interval_start, first_interval_end = entries[i].start, entries[i].end
-        transcript = entries[i].label
         slice = data[math.floor(first_interval_start * TARGET_SAMPLING_RATE): math.ceil(first_interval_end * TARGET_SAMPLING_RATE)]
         # print(samplerate)
         prediction = mms_transcribe_from_array(slice, language='eng')
