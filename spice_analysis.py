@@ -1,3 +1,4 @@
+import ipdb
 import numpy as np
 import torch
 import os
@@ -9,81 +10,116 @@ import librosa
 from praatio import textgrid 
 from dotenv import dotenv_values
 from functools import partial
-from speechbrain.inference.classifiers import EncoderClassifier
-from espnet2.bin.s2t_inference_language import Speech2Language
 import click
 
 from packages.lang_identify import identify_language_speechbrain, owsm_detect_language_from_array
+from packages.mms import mms_transcribe_from_array
 
 SCRATCH_DIR = dotenv_values(".env")["SCRATCH_SAVE_DIR"]
-DATASET_DIR = dotenv_values(".env")["DATASET_DIR"]
 HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
-OWSM_EN_LABEL = "<eng>"
-SPEECHBRAIN_EN_LABEL = 'en: English'
 
-SPICE_DIRNAME = f"{HF_CACHE_DIR}/spice"
-SPICE_TMP_DIRNAME = f"{SCRATCH_DIR}/spice_temp"
+SPICE_DIRNAME = f"spice"
 TARGET_SAMPLING_RATE= 16000
 
-MODEL_ID = "espnet/owsm_v3.1_ebf"
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # no mps support yet
-
-
-# NOTE: compute sampling rate function
-# librosa.get_samplerate(path)
-
-def compute_counts(identify_languge_fn, dtype, participant_id, ):
-    participant_files = list(filter(lambda x: participant_id in x, os.listdir(SPICE_DIRNAME)))
-    assert len(participant_files) == 2
-    tg_index = [idx for idx, s in enumerate(participant_files) if 'TextGrid' in s][0]
-    wav_index = (0 if tg_index == 1 else 1)
-    tg = textgrid.openTextgrid(f"{SPICE_DIRNAME}/{participant_files[tg_index]}", False)
-    entries = tg.getTier('utterance').entries
-    data, _ = librosa.load(f"{SPICE_DIRNAME}/{participant_files[wav_index]}", sr=TARGET_SAMPLING_RATE, dtype=dtype)
+def transcribe_valid_snippets(transcribe_fn, dtype, participant_id):
+    participant_full_wav_file = get_participant_wav_file(participant_id)
+    annotated_tg = get_annotated_textgrid(participant_id)
+    entries = textgrid.openTextgrid(annotated_tg, includeEmptyIntervals=True).getTier('is-valid').entries
+    # only keep entries where the label is 'Y'
+    entries = [e for e in entries if 'Y' in e.label.strip()]
+    data, _ = librosa.load(participant_full_wav_file, sr=TARGET_SAMPLING_RATE, dtype=dtype)
     counter = Counter()
     for i in range(len(entries)):
         first_interval_start, first_interval_end = entries[i].start, entries[i].end
-        label = entries[i].label
+        transcript = entries[i].label
         slice = data[math.floor(first_interval_start * TARGET_SAMPLING_RATE): math.ceil(first_interval_end * TARGET_SAMPLING_RATE)]
         # print(samplerate)
-        if len(label.split(' ')) > 2:
-            sample = {
-                "audio": {
-                    "array": slice,
-                    "sampling_rate": TARGET_SAMPLING_RATE
-                }
-            }
-            prediction = identify_languge_fn(sample)['language_prediction']
-            counter[prediction] += 1
+        prediction = mms_transcribe_from_array(slice, language='eng')
+        ipdb.set_trace()
     return counter
 
 @click.command()
-@click.argument('lang_id_model', type=click.Choice(['speechbrain', 'owsm']))
-def main(lang_id_model):
-    if lang_id_model == 'speechbrain':
-        speechbrain_language_id = EncoderClassifier.from_hparams(source="speechbrain/lang-id-voxlingua107-ecapa", savedir=SCRATCH_DIR)
-        identify_language = partial(identify_language_speechbrain, speechbrain_language_id)
-        dtype = np.float32 # default
-        en_label = SPEECHBRAIN_EN_LABEL
-    elif lang_id_model == 'owsm':
-        s2l = Speech2Language.from_pretrained(
-            model_tag=MODEL_ID,
-            device=DEVICE,
-            nbest=3  # return nbest prediction and probability
-        )
-        identify_language_owsm_partial = partial(owsm_detect_language_from_array, s2l)
-        identify_language_owsm = lambda sample_dict: identify_language_owsm_partial(sample_dict['audio']['array'])
-        identify_language = identify_language_owsm
-        dtype = np.float64
-        en_label = OWSM_EN_LABEL
-    participants = ['VF20B', 'VF19B', 'VF21B', 'VF21D', 'VM21E', 'VM34A', 'VF19C', 'VF19A', 'VM20B'] # NOTE: don't forget that VF19A and VM20B is English-dominant, the other ones are not
-    participant_to_percentages = {}
-    all_counters = []
-    for participant in tqdm(participants):
-        counter = compute_counts(identify_language, dtype, participant)
-        pct_english = counter[en_label] / sum(counter.values())
-        participant_to_percentages[participant] = pct_english
-    print(participant_to_percentages)
+@click.argument('transcription_model', type=click.Choice(['owsm', 'mms']))
+def transcribe_spice(transcription_model):
+    # make a dummy transcription function that just returns 'dummy transcript'
+    dummy_fn = lambda x: {'transcription': 'dummy transcript'}
+    participant_id = 'VF19C'
+    compute_counts(dummy_fn, dtype=np.float64, participant_id=participant_id)
+
+# TODO: implement this.
+
+def _get_participant_textgrid(participant_id):
+    files = os.listdir(SPICE_DIRNAME)
+    # return the file that has the {participant_id} and also .TextGrid at the end
+    target_file = None
+    for file in files:
+        if participant_id in file and file.endswith('.TextGrid'):
+            assert target_file is None, f"Multiple TextGrid files found for participant {participant_id}"
+            target_file = file
+    assert target_file is not None, f"No TextGrid file found for participant {participant_id}"
+    return os.path.join(SPICE_DIRNAME, target_file)
+
+def get_annotated_textgrid(participant_id):
+    filename = list(filter(lambda x: participant_id in x and x.endswith('is_valid_annotated.TextGrid'), os.listdir(SPICE_DIRNAME)))[0]
+    return os.path.join(SPICE_DIRNAME, filename)
+
+def get_participant_wav_file(participant_id):
+    files = os.listdir(SPICE_DIRNAME)
+    # return the file that has the {participant_id} and also .wav at the end
+    target_file = None
+    for file in files:
+        if participant_id in file and file.endswith('.wav'):
+            assert target_file is None, f"Multiple wav files found for participant {participant_id}"
+            target_file = file
+    assert target_file is not None, f"No wav file found for participant {participant_id}"
+    return os.path.join(SPICE_DIRNAME, target_file)
+
+@click.command()
+@click.argument('participant_id') 
+def create_is_valid_textgrid_tier(participant_id):
+    # Path to your existing TextGrid
+    input_path = _get_participant_textgrid(participant_id)
+    output_path = input_path.replace('.TextGrid', '_with_is_valid.TextGrid')
+
+    # Read the TextGrid
+    tg = textgrid.openTextgrid(input_path, includeEmptyIntervals=True)
+
+    # Choose the source tier (the one whose intervals you want to copy)
+    source_tier_name = "utterance"
+    source_tier = tg.getTier(source_tier_name)
+
+    # Create a new tier with the same intervals but empty labels
+    new_tier_name = f"is-valid"
+    new_entries = [(start, end, "") for start, end, _ in source_tier.entries]
+
+    # Create and add the new tier
+    new_tier = textgrid.IntervalTier(new_tier_name, new_entries, tg.minTimestamp, tg.maxTimestamp)
+    tg.addTier(new_tier)
+
+    # Save the modified TextGrid
+    tg.save(output_path, format='long_textgrid', includeBlankSpaces=True)
+    print(f"New tier '{new_tier_name}' added and saved to {output_path}")
+
+@click.command()
+@click.argument('participant_id') 
+def inspect_annotation_distribution(participant_id):
+    # Path to your existing TextGrid
+    input_path = get_annotated_textgrid(participant_id)
+    annotation_entries = textgrid.openTextgrid(input_path, includeEmptyIntervals=True).getTier('is-valid').entries
+    total_entries = len(annotation_entries)
+    valid_entries = 0
+    for start, end, label in annotation_entries:
+        if 'Y' in label.strip():
+            valid_entries += 1
+    print(f"Valid/Total: {valid_entries}/{total_entries} {valid_entries/total_entries}")
+
+@click.group()
+def main():
+    pass
+
+main.add_command(transcribe_spice)
+main.add_command(create_is_valid_textgrid_tier)
+main.add_command(inspect_annotation_distribution)
 
 if __name__ == '__main__':
     main()
