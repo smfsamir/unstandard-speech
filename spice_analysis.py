@@ -33,7 +33,14 @@ def wer(prediction, ground_truth):
         remove_punctuation(ground_truth.lower()), 
         remove_punctuation(prediction.lower()))
 
-def transcribe_valid_snippets(dtype, participant_id):
+def transcribe_valid_snippets(model_name, dtype, participant_id):
+    if model_name.startswith('whisper'): 
+        transcribe_fn = partial(whisper_transcribe_from_array, model=model_name[len('whisper'):], language="en")
+    elif model_name.startswith('mms'):
+        transcribe_fn = partial(mms_transcribe_from_array, language="eng")
+    else:
+        raise ValueError(f"Unknown model name {model_name}")
+
     participant_full_wav_file = get_participant_wav_file(participant_id)
     annotated_tg = get_annotated_textgrid(participant_id)
     entries = textgrid.openTextgrid(annotated_tg, includeEmptyIntervals=True).getTier('is-valid').entries
@@ -49,7 +56,7 @@ def transcribe_valid_snippets(dtype, participant_id):
         first_interval_start, first_interval_end = entries[i].start, entries[i].end
         slice = data[math.floor(first_interval_start * TARGET_SAMPLING_RATE): math.ceil(first_interval_end * TARGET_SAMPLING_RATE)]
         # print(samplerate)
-        prediction = whisper_transcribe_from_array(slice, model="large-v1", language="en")['text'].strip()
+        prediction = transcribe_fn(slice)
         predictions.append(prediction)
         transcripts.append(transcript)
     frame = pl.DataFrame(
@@ -59,10 +66,12 @@ def transcribe_valid_snippets(dtype, participant_id):
             "wer": [wer(p, t) for p, t in zip(predictions, transcripts)]
         }
     )
+    # print the median WER:
+    print(f"Median WER: {frame['wer'].median()}")
     return frame
 
 @click.command()
-@click.argument('transcription_model', type=click.Choice(['owsm', 'mms']))
+@click.argument('transcription_model', type=click.Choice(['whisper-large-v1', 'whisper-large-v2', 'whisper-large-v3', 'mms']))
 def transcribe_spice(transcription_model):
     # make a dummy transcription function that just returns 'dummy transcript'
     participant_id = 'VF19C'
