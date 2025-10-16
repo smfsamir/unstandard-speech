@@ -1,9 +1,12 @@
+import polars as pl
 import ipdb
 import numpy as np
+from string import punctuation
 import torch
 import os
 from tqdm import tqdm
 import soundfile as sf
+from jiwer import wer as jiwer_wer
 import math
 from collections import Counter
 import librosa
@@ -14,12 +17,21 @@ import click
 
 from packages.lang_identify import identify_language_speechbrain, owsm_detect_language_from_array
 from packages.mms import mms_transcribe_from_array
+from packages.whisper import whisper_transcribe_from_array
 
 SCRATCH_DIR = dotenv_values(".env")["SCRATCH_DIR"]
 HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
 
 SPICE_DIRNAME = f"spice"
 TARGET_SAMPLING_RATE= 16000
+
+def remove_punctuation(text):
+    return "".join([c for c in text if c not in punctuation])
+
+def wer(prediction, ground_truth):
+    return jiwer_wer(
+        remove_punctuation(ground_truth.lower()), 
+        remove_punctuation(prediction.lower()))
 
 def transcribe_valid_snippets(dtype, participant_id):
     participant_full_wav_file = get_participant_wav_file(participant_id)
@@ -28,7 +40,8 @@ def transcribe_valid_snippets(dtype, participant_id):
     transcript_entries = textgrid.openTextgrid(annotated_tg, includeEmptyIntervals=True).getTier('utterance').entries
     # only keep entries where the label is 'Y'
     data, _ = librosa.load(participant_full_wav_file, sr=TARGET_SAMPLING_RATE, dtype=dtype)
-    counter = Counter()
+    predictions = []
+    transcripts = []
     for i in range(len(entries)):
         if entries[i][2].strip() != 'Y':
             continue
@@ -36,9 +49,17 @@ def transcribe_valid_snippets(dtype, participant_id):
         first_interval_start, first_interval_end = entries[i].start, entries[i].end
         slice = data[math.floor(first_interval_start * TARGET_SAMPLING_RATE): math.ceil(first_interval_end * TARGET_SAMPLING_RATE)]
         # print(samplerate)
-        prediction = mms_transcribe_from_array(slice, language='eng')
-        ipdb.set_trace()
-    return counter
+        prediction = whisper_transcribe_from_array(slice, model="large-v1", language="en")['text'].strip()
+        predictions.append(prediction)
+        transcripts.append(transcript)
+    frame = pl.DataFrame(
+        {
+            "prediction": predictions,
+            "transcript": transcripts,
+            "wer": [wer(p, t) for p, t in zip(predictions, transcripts)]
+        }
+    )
+    return frame
 
 @click.command()
 @click.argument('transcription_model', type=click.Choice(['owsm', 'mms']))
