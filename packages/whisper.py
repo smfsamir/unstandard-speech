@@ -6,12 +6,14 @@ from faster_whisper import WhisperModel
 import sys
 import os
 from tempfile import NamedTemporaryFile
+from dotenv import dotenv_values
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from .audio import audio_array_to_wav_file
 
 _model_size = "large-v1"  # other options: large-v1, large-v2, large-v3
 _model = None
+HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
 
 def get_model(model_size):
     global _model, _model_size
@@ -22,7 +24,7 @@ def get_model(model_size):
     _model_size = model_size
     if torch.cuda.is_available():
         # Run on GPU with FP16
-        _model = WhisperModel(model_size, device="cuda", compute_type="float16")
+        _model = WhisperModel(model_size, device="cuda", compute_type="float16", cache_dir=HF_CACHE_DIR)
     else:
         # Run on CPU with INT8
         _model = WhisperModel(model_size, device="cpu", compute_type="int8")
