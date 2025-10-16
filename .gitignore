@@ -174,3 +174,12 @@ cython_debug/
 .pypirc
 
 *.wav
+
+# datasets
+allsstar/*
+spice/*
+
+# artifacts
+*.png
+*.tsv
+*.txt
