@@ -21,7 +21,7 @@ HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
 SPICE_DIRNAME = f"spice"
 TARGET_SAMPLING_RATE= 16000
 
-def transcribe_valid_snippets(transcribe_fn, dtype, participant_id):
+def transcribe_valid_snippets(dtype, participant_id):
     participant_full_wav_file = get_participant_wav_file(participant_id)
     annotated_tg = get_annotated_textgrid(participant_id)
     entries = textgrid.openTextgrid(annotated_tg, includeEmptyIntervals=True).getTier('is-valid').entries
@@ -42,9 +42,8 @@ def transcribe_valid_snippets(transcribe_fn, dtype, participant_id):
 @click.argument('transcription_model', type=click.Choice(['owsm', 'mms']))
 def transcribe_spice(transcription_model):
     # make a dummy transcription function that just returns 'dummy transcript'
-    dummy_fn = lambda x: {'transcription': 'dummy transcript'}
     participant_id = 'VF19C'
-    compute_counts(dummy_fn, dtype=np.float64, participant_id=participant_id)
+    transcribe_valid_snippets(dtype=np.float64, participant_id=participant_id)
 
 # TODO: implement this.
 
