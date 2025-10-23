@@ -16,7 +16,7 @@ from dotenv import dotenv_values
 from functools import partial
 import click
 
-# from packages.lang_identify import identify_language_speechbrain, owsm_detect_language_from_array
+from packages.lang_identify import identify_language_speechbrain, owsm_detect_language_from_array
 from packages.mms import mms_transcribe_from_array
 from packages.whisper import whisper_transcribe_from_array
 from packages.qwen import qwen_transcribe_from_array
@@ -92,14 +92,14 @@ def transcribe_valid_snippets(model_name, dtype, participant_id):
 
 @click.command()
 @click.argument('transcription_model', 
-                type=click.Choice(['whisper-large-v1', 'whisper-large-v2', 'whisper-large-v3', 'mms', 'qwen', 'owsm', 
+                type=click.Choice(['whisper-large', 'whisper-large-v2', 'whisper-large-v3', 'mms', 'qwen', 'owsm', 
                                    'all']))
 def transcribe_spice(transcription_model):
     # make a dummy transcription function that just returns 'dummy transcript'
     participant_id = 'VF19C'
     all_frames = []
     if transcription_model == 'all':
-        for model in ['whisper-large-v1', 'whisper-large-v2', 'whisper-large-v3', 'mms', 'qwen', 'owsm']:
+        for model in ['whisper-large', 'whisper-large-v2', 'whisper-large-v3', 'mms', 'qwen', 'owsm']:
             print(f"Transcribing with model {model}")
             result_frame = transcribe_valid_snippets(model, dtype=np.float64, participant_id=participant_id)
             result_frame['model'] = model
