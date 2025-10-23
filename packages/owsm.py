@@ -7,7 +7,7 @@ import os
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from core.audio import audio_file_to_array, audio_record_to_array, TARGET_SAMPLE_RATE
+from audio import audio_file_to_array, TARGET_SAMPLE_RATE
 
 import torch
 import numpy as np
@@ -109,16 +109,16 @@ def owsm_transcribe_from_file(
     )
 
 
-def owsm_transcribe_from_mic(
-    text_prompt: "str | None" = None,
-    naive_long=True,
-    timestamps=False,
-    translate: "tuple[str, str]" = ("eng", "eng"),
-):
-    wav_array = audio_record_to_array().astype(np.float64) / 32768
-    return owsm_transcribe_from_array(
-        wav_array, text_prompt, naive_long, timestamps, translate
-    )
+# def owsm_transcribe_from_mic(
+#     text_prompt: "str | None" = None,
+#     naive_long=True,
+#     timestamps=False,
+#     translate: "tuple[str, str]" = ("eng", "eng"),
+# ):
+#     wav_array = audio_record_to_array().astype(np.float64) / 32768
+#     return owsm_transcribe_from_array(
+#         wav_array, text_prompt, naive_long, timestamps, translate
+#     )
 
 
 def main(args):
