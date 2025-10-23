@@ -17,11 +17,11 @@ from functools import partial
 import click
 
 from packages.lang_identify import identify_language_speechbrain, owsm_detect_language_from_array
-from packages.mms import mms_transcribe_from_array
+from packages.mms import mms_transcribe_from_array, delete_model_mms
 from packages.whisper import whisper_transcribe_from_array
-from packages.qwen import qwen_transcribe_from_array
-from packages.canary import canary_transcribe_from_array
-from packages.owsm import owsm_transcribe_from_array
+from packages.qwen import qwen_transcribe_from_array, delete_model_qwen
+# from packages.canary import canary_transcribe_from_array
+from packages.owsm import owsm_transcribe_from_array, delete_model_owsm
 
 SCRATCH_DIR = dotenv_values(".env")["SCRATCH_DIR"]
 HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
@@ -38,16 +38,20 @@ def wer(prediction, ground_truth):
         remove_punctuation(prediction.lower()))
 
 def transcribe_valid_snippets(model_name, dtype, participant_id):
+    delete_model_fn = None
     if model_name.startswith('whisper'): 
         transcribe_fn = partial(whisper_transcribe_from_array, model=model_name[len('whisper-'):], language="en")
     elif model_name.startswith('mms'):
         transcribe_fn = partial(mms_transcribe_from_array, language="eng")
+        delete_model_fn = delete_model_mms
     elif model_name.startswith('qwen'):
         transcribe_fn = partial(qwen_transcribe_from_array)
-    elif model_name.startswith('canary'):
-        transcribe_fn = partial(canary_transcribe_from_array) 
+        delete_model_fn = delete_model_qwen
+    # elif model_name.startswith('canary'):
+    #     transcribe_fn = partial(canary_transcribe_from_array) 
     elif model_name.startswith('owsm'):
         transcribe_fn = partial(owsm_transcribe_from_array) 
+        delete_model_fn = delete_model_owsm
     else:
         raise ValueError(f"Unknown model name {model_name}")
 
@@ -69,6 +73,8 @@ def transcribe_valid_snippets(model_name, dtype, participant_id):
         prediction = transcribe_fn(slice)
         predictions.append(prediction)
         transcripts.append(transcript)
+    if delete_model_fn is not None:
+        delete_model_fn()
     frame = pd.DataFrame(
         {
             "prediction": predictions,
