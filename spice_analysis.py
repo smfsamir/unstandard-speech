@@ -16,7 +16,7 @@ from dotenv import dotenv_values
 from functools import partial
 import click
 
-from packages.lang_identify import identify_language_speechbrain, owsm_detect_language_from_array
+# from packages.lang_identify import identify_language_speechbrain, owsm_detect_language_from_array
 from packages.mms import mms_transcribe_from_array
 from packages.whisper import whisper_transcribe_from_array
 
@@ -36,7 +36,7 @@ def wer(prediction, ground_truth):
 
 def transcribe_valid_snippets(model_name, dtype, participant_id):
     if model_name.startswith('whisper'): 
-        transcribe_fn = partial(whisper_transcribe_from_array, model=model_name[len('whisper'):], language="en")
+        transcribe_fn = partial(whisper_transcribe_from_array, model=model_name[len('whisper-'):], language="en")
     elif model_name.startswith('mms'):
         transcribe_fn = partial(mms_transcribe_from_array, language="eng")
     else:
@@ -76,7 +76,7 @@ def transcribe_valid_snippets(model_name, dtype, participant_id):
 def transcribe_spice(transcription_model):
     # make a dummy transcription function that just returns 'dummy transcript'
     participant_id = 'VF19C'
-    transcribe_valid_snippets(dtype=np.float64, participant_id=participant_id)
+    transcribe_valid_snippets(transcription_model, dtype=np.float64, participant_id=participant_id)
 
 # TODO: implement this.
 
