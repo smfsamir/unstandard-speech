@@ -133,6 +133,9 @@ def main(args):
     else:
         print(owsm_transcribe_from_file(input_path))
 
+def delete_model_owsm():
+    del s2t
+    torch.cuda.empty_cache()
 
 if __name__ == "__main__":
     main(sys.argv[1:])

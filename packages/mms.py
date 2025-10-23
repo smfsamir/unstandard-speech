@@ -55,3 +55,8 @@ def mms_transcribe_from_array(wav_array, language="eng"):
 def mms_transcribe_from_file(input_path: str, language="eng"):
     wav_array = audio_file_to_array(input_path).astype(np.float32) / 32768
     return mms_transcribe_from_array(wav_array, language)
+
+def delete_model_mms():
+    global model
+    del model
+    torch.cuda.empty_cache()

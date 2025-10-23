@@ -50,3 +50,8 @@ def qwen_transcribe_from_array(wav_array):
     )[0]
 
     return response
+
+def delete_model_qwen():
+    global model
+    del model
+    torch.cuda.empty_cache()
