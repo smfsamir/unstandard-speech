@@ -57,6 +57,6 @@ def whisper_transcribe_timestamped(input_path, model="small", language="en"):
 
 
 def whisper_transcribe_from_array(wav_array, model="small", language="en"):
-    return get_model(model).transcribe_from_array(
+    return get_model(f"whisper-{model}").transcribe_from_array(
         wav_array, language=language
     )
