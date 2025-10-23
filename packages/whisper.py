@@ -8,6 +8,9 @@ import os
 from tempfile import NamedTemporaryFile
 from dotenv import dotenv_values
 from transformers import WhisperForConditionalGeneration, AutoProcessor
+import loguru
+
+logger = loguru.logger
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -42,6 +45,7 @@ def get_model(model_size):
     #     torch.cuda.empty_cache()
 
     _model_size = model_size
+    logger.info(f"Loading Whisper model: {_model_size}")
     generation_model = WhisperForConditionalGeneration.from_pretrained(f"openai/{_model_size}", cache_dir=HF_CACHE_DIR).to('cuda')
     processor = AutoProcessor.from_pretrained(f"openai/{_model_size}", cache_dir=HF_CACHE_DIR)
     _model = WhisperWrapper(generation_model, processor)
