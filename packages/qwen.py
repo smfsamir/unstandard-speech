@@ -4,6 +4,7 @@
 
 import os
 import sys
+from dotenv import dotenv_values
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from core.audio import audio_record_to_array, audio_file_to_array, TARGET_SAMPLE_RATE
@@ -11,6 +12,8 @@ from core.audio import audio_record_to_array, audio_file_to_array, TARGET_SAMPLE
 import torch
 import numpy as np
 from transformers import Qwen2AudioProcessor, Qwen2AudioForConditionalGeneration
+
+HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
 
 DEVICE = (
     "cuda"
@@ -21,7 +24,7 @@ DEVICE = (
 model_id = "Qwen/Qwen2-Audio-7B"
 
 processor: Qwen2AudioProcessor = Qwen2AudioProcessor.from_pretrained(model_id)  # type: ignore
-model = Qwen2AudioForConditionalGeneration.from_pretrained(model_id).to(DEVICE)  # type: ignore
+model = Qwen2AudioForConditionalGeneration.from_pretrained(model_id,cache_dir=HF_CACHE_DIR).to(DEVICE)  # type: ignore
 
 
 def qwen_transcribe_from_array(wav_array):

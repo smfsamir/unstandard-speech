@@ -19,6 +19,7 @@ import click
 # from packages.lang_identify import identify_language_speechbrain, owsm_detect_language_from_array
 from packages.mms import mms_transcribe_from_array
 from packages.whisper import whisper_transcribe_from_array
+from packages.qwen import qwen_transcribe_from_array
 
 SCRATCH_DIR = dotenv_values(".env")["SCRATCH_DIR"]
 HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
@@ -39,6 +40,8 @@ def transcribe_valid_snippets(model_name, dtype, participant_id):
         transcribe_fn = partial(whisper_transcribe_from_array, model=model_name[len('whisper-'):], language="en")
     elif model_name.startswith('mms'):
         transcribe_fn = partial(mms_transcribe_from_array, language="eng")
+    elif model_name.startswith('qwen'):
+        transcribe_fn = partial(qwen_transcribe_from_array)
     else:
         raise ValueError(f"Unknown model name {model_name}")
 
@@ -76,7 +79,8 @@ def transcribe_valid_snippets(model_name, dtype, participant_id):
     return frame
 
 @click.command()
-@click.argument('transcription_model', type=click.Choice(['whisper-large-v1', 'whisper-large-v2', 'whisper-large-v3', 'mms']))
+@click.argument('transcription_model', 
+                type=click.Choice(['whisper-large-v1', 'whisper-large-v2', 'whisper-large-v3', 'mms', 'qwen']))
 def transcribe_spice(transcription_model):
     # make a dummy transcription function that just returns 'dummy transcript'
     participant_id = 'VF19C'
