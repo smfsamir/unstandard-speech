@@ -17,7 +17,7 @@ import os
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from core.audio import audio_record_to_array, audio_file_to_array, TARGET_SAMPLE_RATE
+from .audio import audio_record_to_array, audio_file_to_array, TARGET_SAMPLE_RATE
 from dotenv import dotenv_values
 
 import torch
