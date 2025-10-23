@@ -22,27 +22,27 @@ from dotenv import dotenv_values
 
 import torch
 import numpy as np
-from nemo.collections.speechlm2.models import SALM  # type: ignore
 from .audio import audio_array_to_wav_file
 
 from tempfile import NamedTemporaryFile
 
 
-DEVICE = (
-    "cuda"
-    if torch.cuda.is_available()
-    else "mps" if torch.backends.mps.is_available() else "cpu"
-)
-
-model_id = "nvidia/canary-qwen-2.5b"
-HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
-salm = SALM.from_pretrained(model_id, cache_dir=HF_CACHE_DIR).to(DEVICE)
 
 
 def canary_transcribe_from_array(wav_array):
     """
     wav_array is an int16 16kHz wav pcm array or a normalized float32 16kHz pcm array
     """
+    from nemo.collections.speechlm2.models import SALM  # type: ignore
+    DEVICE = (
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps" if torch.backends.mps.is_available() else "cpu"
+    )
+
+    model_id = "nvidia/canary-qwen-2.5b"
+    HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
+    salm = SALM.from_pretrained(model_id, cache_dir=HF_CACHE_DIR).to(DEVICE)
 
     if wav_array.dtype != np.float32:  # canary expects normalized float32 at 16 kHz
         wav_array = wav_array.astype(np.float32) / 32768
