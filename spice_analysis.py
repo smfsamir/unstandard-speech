@@ -92,11 +92,20 @@ def transcribe_valid_snippets(model_name, dtype, participant_id):
 
 @click.command()
 @click.argument('transcription_model', 
-                type=click.Choice(['whisper-large-v1', 'whisper-large-v2', 'whisper-large-v3', 'mms', 'qwen', 'owsm']))
+                type=click.Choice(['whisper-large-v1', 'whisper-large-v2', 'whisper-large-v3', 'mms', 'qwen', 'owsm', 
+                                   'all']))
 def transcribe_spice(transcription_model):
     # make a dummy transcription function that just returns 'dummy transcript'
     participant_id = 'VF19C'
-    transcribe_valid_snippets(transcription_model, dtype=np.float64, participant_id=participant_id)
+    all_frames = []
+    if transcription_model == 'all':
+        for model in ['whisper-large-v1', 'whisper-large-v2', 'whisper-large-v3', 'mms', 'qwen', 'owsm']:
+            print(f"Transcribing with model {model}")
+            result_frame = transcribe_valid_snippets(model, dtype=np.float64, participant_id=participant_id)
+            result_frame['model'] = model
+            all_frames.append(result_frame)
+    final_frame = pd.concat(all_frames, ignore_index=True)
+    ipdb.set_trace()
 
 # TODO: implement this.
 
