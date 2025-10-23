@@ -18,6 +18,7 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from core.audio import audio_record_to_array, audio_file_to_array, TARGET_SAMPLE_RATE
+from dotenv import dotenv_values
 
 import torch
 import numpy as np
@@ -34,7 +35,8 @@ DEVICE = (
 )
 
 model_id = "nvidia/canary-qwen-2.5b"
-salm = SALM.from_pretrained(model_id).to(DEVICE)
+HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
+salm = SALM.from_pretrained(model_id, cache_dir=HF_CACHE_DIR).to(DEVICE)
 
 
 def canary_transcribe_from_array(wav_array):
