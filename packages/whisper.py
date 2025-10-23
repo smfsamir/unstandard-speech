@@ -37,7 +37,7 @@ def get_model(model_size):
 
     if _model is not None and model_size == _model_size:
         return _model
-    elif _model is not None:
+    elif _model is not None and model_size != _model_size:
         del _model
         torch.cuda.empty_cache()
 
