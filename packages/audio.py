@@ -6,7 +6,6 @@ def audio_dual_channel_to_mono(input_array):
         return np.mean(input_array, axis=1).astype(np.int16)
     return input_array
 
-
 TARGET_SAMPLE_RATE = 16000
 
 def audio_file_to_array(
@@ -31,3 +30,8 @@ def audio_resample(array, src_sample_rate, target_sample_rate=TARGET_SAMPLE_RATE
         np.arange(len(array)),
         array,
     ).astype(np.int16)
+
+def audio_array_to_wav_file(
+    input_array, output_path, output_sample_rate=TARGET_SAMPLE_RATE
+):
+    wavfile.write(output_path, output_sample_rate, input_array)
