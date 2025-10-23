@@ -86,7 +86,7 @@ def transcribe_valid_snippets(model_name, dtype, participant_id):
 
 @click.command()
 @click.argument('transcription_model', 
-                type=click.Choice(['whisper-large-v1', 'whisper-large-v2', 'whisper-large-v3', 'mms', 'qwen']))
+                type=click.Choice(['whisper-large-v1', 'whisper-large-v2', 'whisper-large-v3', 'mms', 'qwen', 'owsm']))
 def transcribe_spice(transcription_model):
     # make a dummy transcription function that just returns 'dummy transcript'
     participant_id = 'VF19C'
