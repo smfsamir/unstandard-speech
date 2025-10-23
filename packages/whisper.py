@@ -37,9 +37,9 @@ def get_model(model_size):
 
     if _model is not None and model_size == _model_size:
         return _model
-    elif _model is not None and model_size != _model_size:
-        del _model
-        torch.cuda.empty_cache()
+    # elif _model is not None and model_size != _model_size:
+    #     del _model
+    #     torch.cuda.empty_cache()
 
     _model_size = model_size
     generation_model = WhisperForConditionalGeneration.from_pretrained(f"openai/{_model_size}", cache_dir=HF_CACHE_DIR).to('cuda')
