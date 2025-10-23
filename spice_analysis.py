@@ -78,7 +78,13 @@ def transcribe_valid_snippets(model_name, dtype, participant_id):
     )
     # sample 10 random rows and print the prediction and transcript
     print("Sample predictions:")
-    print(frame.sample(10)[['prediction', 'transcript', 'wer']])
+    sample_frame = frame.sample(10)[['prediction', 'transcript', 'wer']]
+    for i, row in sample_frame.iterrows():
+        print(f"Prediction: {row['prediction']}")
+        print(f"Transcript: {row['transcript']}")
+        print(f"WER: {row['wer']}")
+        print("-----")
+
     
     # print the median WER:
     print(f"Median WER: {frame['wer'].median()}")
