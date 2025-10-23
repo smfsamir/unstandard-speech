@@ -21,6 +21,7 @@ from packages.mms import mms_transcribe_from_array
 from packages.whisper import whisper_transcribe_from_array
 from packages.qwen import qwen_transcribe_from_array
 from packages.canary import canary_transcribe_from_array
+from packages.owsm import owsm_transcribe_from_array
 
 SCRATCH_DIR = dotenv_values(".env")["SCRATCH_DIR"]
 HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
@@ -45,6 +46,8 @@ def transcribe_valid_snippets(model_name, dtype, participant_id):
         transcribe_fn = partial(qwen_transcribe_from_array)
     elif model_name.startswith('canary'):
         transcribe_fn = partial(canary_transcribe_from_array) 
+    elif model_name.startswith('owsm'):
+        transcribe_fn = partial(owsm_transcribe_from_array) 
     else:
         raise ValueError(f"Unknown model name {model_name}")
 
