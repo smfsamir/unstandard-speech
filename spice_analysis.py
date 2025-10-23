@@ -105,7 +105,7 @@ def transcribe_spice(transcription_model):
     participant_id = 'VF19C'
     all_frames = []
     if transcription_model == 'all':
-        for model in ['whisper-large', 'whisper-large-v2', 'whisper-large-v3', 'mms', 'qwen', 'owsm']:
+        for model in ['mms', 'qwen', 'owsm', 'whisper-large', 'whisper-large-v2', 'whisper-large-v3']:
             print(f"Transcribing with model {model}")
             result_frame = transcribe_valid_snippets(model, dtype=np.float64, participant_id=participant_id)
             result_frame['model'] = model
