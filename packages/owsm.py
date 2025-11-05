@@ -134,6 +134,7 @@ def main(args):
         print(owsm_transcribe_from_file(input_path))
 
 def delete_model_owsm():
+    global s2t
     del s2t
     torch.cuda.empty_cache()
 
