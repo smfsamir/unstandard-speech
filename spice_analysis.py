@@ -113,7 +113,7 @@ def transcribe_spice(transcription_model, participant):
     if transcription_model == 'all':
         for model in ['mms', 'qwen', 'owsm', 'whisper-large', 'whisper-large-v2', 'whisper-large-v3']:
             print(f"Transcribing with model {model}")
-            result_frame = transcribe_valid_snippets(model, dtype=np.float64, participant_id=participant_id)
+            result_frame = transcribe_valid_snippets(model, dtype=np.float64, participant_id=participant)
             result_frame['model'] = model
             all_frames.append(result_frame)
     final_frame = pd.concat(all_frames, ignore_index=True)
