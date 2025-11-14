@@ -15,13 +15,17 @@ from praatio import textgrid
 from dotenv import dotenv_values
 from functools import partial
 import click
-
-from packages.lang_identify import identify_language_speechbrain, owsm_detect_language_from_array
-from packages.mms import mms_transcribe_from_array, delete_model_mms
-from packages.whisper import whisper_transcribe_from_array
-from packages.qwen import qwen_transcribe_from_array, delete_model_qwen
-# from packages.canary import canary_transcribe_from_array
-from packages.owsm import owsm_transcribe_from_array, delete_model_owsm
+DEVICE = (
+    "cuda"
+    if torch.cuda.is_available()
+    else "mps" if torch.backends.mps.is_available() else "cpu"
+)
+if DEVICE == "cuda": # NOTE: err probably shouldn't do conditional imports but you only live once!!
+    from packages.mms import mms_transcribe_from_array, delete_model_mms
+    from packages.whisper import whisper_transcribe_from_array
+    from packages.qwen import qwen_transcribe_from_array, delete_model_qwen
+    # from packages.canary import canary_transcribe_from_array
+    from packages.owsm import owsm_transcribe_from_array, delete_model_owsm
 
 SCRATCH_DIR = dotenv_values(".env")["SCRATCH_DIR"]
 HF_CACHE_DIR = dotenv_values(".env")["HF_CACHE_DIR"]
@@ -100,8 +104,10 @@ def transcribe_valid_snippets(model_name, dtype, participant_id):
 @click.argument('transcription_model', 
                 type=click.Choice(['whisper-large', 'whisper-large-v2', 'whisper-large-v3', 'mms', 'qwen', 'owsm', 
                                    'all']))
-def transcribe_spice(transcription_model):
-    # make a dummy transcription function that just returns 'dummy transcript'
+@click.argument('participant')
+def transcribe_spice(transcription_model, participant):
+    # make an assertion that {participant} is in the list of spice participants with a _is_valid_annotated.TextGrid file
+    assert participant in [f.split('_is_valid_annotated.TextGrid')[0] for f in os.listdir(SPICE_DIRNAME) if f.endswith('_is_valid_annotated.TextGrid')], f"Participant {participant} not found in spice dataset"
     participant_id = 'VF19C'
     all_frames = []
     if transcription_model == 'all':
@@ -111,6 +117,7 @@ def transcribe_spice(transcription_model):
             result_frame['model'] = model
             all_frames.append(result_frame)
     final_frame = pd.concat(all_frames, ignore_index=True)
+    return final_frame
     ipdb.set_trace()
 
 # TODO: implement this.
@@ -141,6 +148,17 @@ def get_participant_wav_file(participant_id):
     assert target_file is not None, f"No wav file found for participant {participant_id}"
     return os.path.join(SPICE_DIRNAME, target_file)
 
+def filter_by_transcript(label):
+    # if the label contains "&" or "um" or "uh", then it should be filtered out
+    if "&" in label:
+        return "invalid_correction"
+    if " um " in label or label.startswith("um " ) or label.endswith(" um"):
+        return "invalid_filler"
+    if " uh " in label or label.startswith("uh " ) or label.endswith(" uh"):
+        return "invalid_filler"
+    return "valid"
+        
+
 @click.command()
 @click.argument('participant_id') 
 def create_is_valid_textgrid_tier(participant_id):
@@ -151,13 +169,41 @@ def create_is_valid_textgrid_tier(participant_id):
     # Read the TextGrid
     tg = textgrid.openTextgrid(input_path, includeEmptyIntervals=True)
 
+    task_tier_name = "task"
+    task_tier_segments = tg.getTier(task_tier_name).entries
+    assert task_tier_segments[0].label == "sentences", f"Expected first segment to be 'sentence' but is {task_tier_segments[0].label}"
+    assert task_tier_segments[1].label == "storyboard"
+    assert task_tier_segments[2].label == "interview"
+    sentence_start_end = (task_tier_segments[0].start, task_tier_segments[0].end)
+    storyboard_start_end = (task_tier_segments[1].start, task_tier_segments[1].end)
+    interview_start_end = (task_tier_segments[2].start, task_tier_segments[2].end)
+
+    def in_segment(start, end, segment):
+        seg_start, seg_end = segment
+        return start >= seg_start and end <= seg_end
+
+
     # Choose the source tier (the one whose intervals you want to copy)
     source_tier_name = "utterance"
     source_tier = tg.getTier(source_tier_name)
 
     # Create a new tier with the same intervals but empty labels
     new_tier_name = f"is-valid"
-    new_entries = [(start, end, "") for start, end, _ in source_tier.entries]
+    new_entries = []
+    for entry in source_tier.entries:
+        start, end, label = entry
+        if label == "":
+            continue
+        if filter_by_transcript(label) == "valid":
+            if in_segment(start, end, sentence_start_end):
+                new_label = "Y"
+            elif in_segment(start, end, storyboard_start_end):
+                new_label = "Y"
+            elif in_segment(start, end, interview_start_end):
+                new_label = "" # needs to be annotated manually, checking for interviewer speech  
+        else:
+            new_label = "N"
+        new_entries.append((start, end, new_label))
 
     # Create and add the new tier
     new_tier = textgrid.IntervalTier(new_tier_name, new_entries, tg.minTimestamp, tg.maxTimestamp)
