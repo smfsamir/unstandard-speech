@@ -116,8 +116,8 @@ def transcribe_spice(transcription_model, participant):
             result_frame['model'] = model
             all_frames.append(result_frame)
     final_frame = pd.concat(all_frames, ignore_index=True)
-    return final_frame
     ipdb.set_trace()
+    return final_frame
 
 # TODO: implement this.
 
