@@ -9,9 +9,10 @@ from tqdm import tqdm
 import soundfile as sf
 from jiwer import wer as jiwer_wer
 import math
-from collections import Counter
+from collections import Counter, OrderedDict
 import librosa
 from praatio import textgrid 
+from flowmason import conduct, MapReduceStep, SingletonStep
 from dotenv import dotenv_values
 from functools import partial
 import click
@@ -100,25 +101,46 @@ def transcribe_valid_snippets(model_name, dtype, participant_id):
     print(f"Median WER: {frame['wer'].median()}")
     return frame
 
+def step_transcribe_valid_snippets_all_models(participant: str, **kwargs):
+    participant_ids = [f.split('_is_valid_annotated.TextGrid')[0] for f in os.listdir(SPICE_DIRNAME) if f.endswith('_is_valid_annotated.TextGrid')]
+    assert any(participant in pid for pid in participant_ids), f"Participant {participant} not found in spice participants with is_valid_annotated.TextGrid files: {participant_ids}"
+    all_frames = []
+    for model in ['mms', 'qwen', 'owsm', 'whisper-large', 'whisper-large-v2', 'whisper-large-v3']:
+        print(f"Transcribing with model {model}")
+        result_frame = transcribe_valid_snippets(model, dtype=np.float64, participant_id=participant)
+        result_frame['model'] = model
+        all_frames.append(result_frame)
+    final_frame = pd.concat(all_frames, ignore_index=True)
+    # add the participant column
+    final_frame['participant'] = participant
+    return final_frame
+
 @click.command()
 @click.argument('transcription_model', 
                 type=click.Choice(['whisper-large', 'whisper-large-v2', 'whisper-large-v3', 'mms', 'qwen', 'owsm', 
                                    'all']))
-@click.argument('participant')
 def transcribe_spice(transcription_model, participant):
-    # make an assertion that {participant} is in the list of spice participants with a _is_valid_annotated.TextGrid file
-    participant_ids = [f.split('_is_valid_annotated.TextGrid')[0] for f in os.listdir(SPICE_DIRNAME) if f.endswith('_is_valid_annotated.TextGrid')]
-    assert any(participant in pid for pid in participant_ids), f"Participant {participant} not found in spice participants with is_valid_annotated.TextGrid files: {participant_ids}"
-    all_frames = []
-    if transcription_model == 'all':
-        for model in ['mms', 'qwen', 'owsm', 'whisper-large', 'whisper-large-v2', 'whisper-large-v3']:
-            print(f"Transcribing with model {model}")
-            result_frame = transcribe_valid_snippets(model, dtype=np.float64, participant_id=participant)
-            result_frame['model'] = model
-            all_frames.append(result_frame)
-    final_frame = pd.concat(all_frames, ignore_index=True)
+    full_map_dict = OrderedDict()
+    map_steps = OrderedDict()
+    map_steps['generate_transcriptions'] = SingletonStep(
+        step_transcribe_valid_snippets_all_models, {
+        'version': '001'
+    })
+    full_map_dict = MapReduceStep(
+        map_steps,
+        {
+            'participant': ['VF19A', 'VF19C']
+        }, {
+            'version': '001'
+        },
+        pd.concat,
+        'participant',
+        []
+    )
+    full_map_dict['generate_transcriptions'] = MapReduceStep() 
+    metadata = conduct(os.path.join(SCRATCH_DIR, 'determinism_cache'), full_map_dict, 'determinism_logs')
     ipdb.set_trace()
-    return final_frame
+    # make an assertion that {participant} is in the list of spice participants with a _is_valid_annotated.TextGrid file
 
 # TODO: implement this.
 
