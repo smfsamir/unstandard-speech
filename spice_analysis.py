@@ -107,7 +107,8 @@ def transcribe_valid_snippets(model_name, dtype, participant_id):
 @click.argument('participant')
 def transcribe_spice(transcription_model, participant):
     # make an assertion that {participant} is in the list of spice participants with a _is_valid_annotated.TextGrid file
-    assert participant in [f.split('_is_valid_annotated.TextGrid')[0] for f in os.listdir(SPICE_DIRNAME) if f.endswith('_is_valid_annotated.TextGrid')], f"Participant {participant} not found in spice dataset"
+    participant_ids = [f.split('_is_valid_annotated.TextGrid')[0] for f in os.listdir(SPICE_DIRNAME) if f.endswith('_is_valid_annotated.TextGrid')]
+    assert any(participant in pid for pid in participant_ids), f"Participant {participant} not found in spice participants with is_valid_annotated.TextGrid files: {participant_ids}"
     all_frames = []
     if transcription_model == 'all':
         for model in ['mms', 'qwen', 'owsm', 'whisper-large', 'whisper-large-v2', 'whisper-large-v3']:
