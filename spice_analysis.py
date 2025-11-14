@@ -119,7 +119,7 @@ def step_transcribe_valid_snippets_all_models(participant: str, **kwargs):
 @click.argument('transcription_model', 
                 type=click.Choice(['whisper-large', 'whisper-large-v2', 'whisper-large-v3', 'mms', 'qwen', 'owsm', 
                                    'all']))
-def transcribe_spice(transcription_model, participant):
+def transcribe_spice(transcription_model):
     full_map_dict = OrderedDict()
     map_steps = OrderedDict()
     map_steps['generate_transcriptions'] = SingletonStep(
