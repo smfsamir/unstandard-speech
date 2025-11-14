@@ -126,7 +126,7 @@ def transcribe_spice(transcription_model):
         step_transcribe_valid_snippets_all_models, {
         'version': '001'
     })
-    full_map_dict = MapReduceStep(
+    full_map_dict['map_all_participants'] = MapReduceStep(
         map_steps,
         {
             'participant': ['VF19A', 'VF19C']
@@ -137,7 +137,6 @@ def transcribe_spice(transcription_model):
         'participant',
         []
     )
-    full_map_dict['generate_transcriptions'] = MapReduceStep() 
     metadata = conduct(os.path.join(SCRATCH_DIR, 'determinism_cache'), full_map_dict, 'determinism_logs')
     ipdb.set_trace()
     # make an assertion that {participant} is in the list of spice participants with a _is_valid_annotated.TextGrid file
